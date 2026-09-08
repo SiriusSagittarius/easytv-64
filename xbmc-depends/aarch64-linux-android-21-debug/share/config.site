@@ -1,0 +1,102 @@
+if test "yes" = "yes"; then
+cross_compiling=yes
+host=aarch64-linux-android
+host_alias=aarch64-linux-android
+fi
+
+LD="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld"
+CC="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+CXX="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++"
+CPP="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -E"
+AR="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+AS="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-as"
+NM="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm"
+STRIP="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+RANLIB="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib"
+OBJDUMP="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-objdump"
+
+if test "android" = "darwin_embedded" ; then
+  export AS="/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/gas-preprocessor.pl /usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -arch arm64-v8a"
+  export CCAS="--tag CC /home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/gas-preprocessor.pl /usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -arch arm64-v8a"
+fi
+
+ASFLAGS=""
+CFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -Og -g -D_DEBUG  -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/include/android-21 -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/include $CFLAGS"
+LDFLAGS="-L/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/lib -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -L/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/lib/android-21   $LDFLAGS"
+CXXFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -frtti -Og -g -D_DEBUG  -std=c++17 -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/include/android-21 -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/include $CXXFLAGS"
+CPPFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -Og -g -D_DEBUG  -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/include/android-21 -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/include $CPPFLAGS"
+
+export PKG_CONFIG=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/pkg-config
+export PKG_CONFIG_LIBDIR=/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/lib/pkgconfig
+export NASM=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/nasm
+LIBGCRYPT_CONFIG=/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-debug/bin/libgcrypt-config
+
+PATH=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin:/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/usr/bin:/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+LD_LIBRARY_PATH=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/lib:$LD_LIBRARY_PATH
+
+NATIVE_ROOT=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native
+
+#curl
+ac_cv_file__dev_urandom=yes
+ac_cv_lib_ssl_SSL_connect=yes
+
+#gettext and libiconv
+gl_cv_header_working_stdint_h=yes
+
+#libcec
+ac_cv_search_dlopen=-ldl
+
+#python
+ac_cv_func_gethostbyname_r=no
+ac_cv_header_sys_un_h=yes
+ac_cv_file__dev_ptmx=no
+ac_cv_file__dev_ptc=no
+
+#gnutls
+gl_cv_func_gettimeofday_clobber=no
+
+#wayland
+if test "${PACKAGE_NAME}" = "wayland"; then
+  # wayland insists on building tests which rely on assert, which cannot work with -DNDEBUG
+  # Maybe it would be better not to define -DNDEBUG globally for release builds?
+  export CFLAGS=`echo ${CFLAGS} | sed 's/-DNDEBUG=1//g'`
+  export CPPFLAGS=`echo ${CPPFLAGS} | sed 's/-DNDEBUG=1//g'`
+fi
+
+
+if test "android" = "android"; then
+  ac_cv_func_srand=yes
+  ac_cv_func_rand=yes
+fi
+
+if test "android" = "darwin_embedded"; then
+  # there is no clock_settime on iOS/tvOS as of latest version 13.X
+  ac_cv_func_clock_settime=no
+
+  # tweaks for flac
+  if test "${ac_unique_file}" = "src/flac/main.c" ; then
+    # compiler barfs if we use -O3/O2 for flac
+    export CFLAGS=`echo ${CFLAGS} | sed 's/-O3/-Os/'`
+    export CPPFLAGS=`echo ${CPPFLAGS} | sed 's/-O3/-Os/'`
+  fi
+fi
+
+if test "" = "appletvos"; then
+  ac_cv_func_sigaltstack=no
+  ac_cv_func_vfork_works=no
+  ac_cv_func_fork=no
+fi
+
+#Fix for older, broken android toolchains
+if test "${PACKAGE_NAME}" = "FreeType" -a "android" = "android"; then
+  CFLAGS="$CFLAGS -std=gnu99"
+fi
+
+# These libs do not correctly export their symbols. Force them in case
+# -fvisibility=hidden is set.
+if test "${ac_unique_file}" = "src/flac/main.c" || \
+   test "${ac_unique_file}" = "src/framing.c" || \
+   test "${ac_unique_file}" = "src/libdvdcss.c" || \
+   test "${PACKAGE_NAME}" = "libssh2" ; then
+     CFLAGS="$CFLAGS -fvisibility=default"
+fi

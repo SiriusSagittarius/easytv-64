@@ -1,0 +1,26 @@
+LD="${LD:-/usr/bin/ld}"
+CC="${CC:-/usr/bin/ccache gcc}"
+CXX="${CXX:-/usr/bin/ccache g++}"
+AR="${AR:-/usr/bin/ar}"
+RANLIB="${RANLIB:-/usr/bin/ranlib}"
+AS="${AS:-/usr/bin/as}"
+NM="${NM:-/usr/bin/nm}"
+STRIP="${STRIP:-/usr/bin/strip}"
+READELF="${READELF:-/usr/bin/readelf}"
+OBJDUMP="${OBJDUMP:-/usr/bin/objdump}"
+
+CFLAGS=" -I/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/include $CFLAGS"
+LDFLAGS=" -L/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/lib $LDFLAGS"
+CPPFLAGS=" -I/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/include $CPPFLAGS"
+CXXFLAGS=" -I/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/include $CXXFLAGS"
+
+PKG_CONFIG=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/pkg-config
+export PKG_CONFIG_LIBDIR=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/lib/pkgconfig
+
+PATH=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin:$PATH
+if test -n ""; then
+  PATH=/usr/bin:/bin:$PATH
+fi
+
+LD_LIBRARY_PATH=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/lib:$LD_LIBRARY_PATH
+NASM=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/nasm
