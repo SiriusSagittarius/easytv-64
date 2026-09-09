@@ -1087,7 +1087,7 @@ bool CXBMCApp::StartActivity(const std::string& package,
     // including an empty string passed via setDataAndType(), so plain setData() is required
     // for those to resolve correctly.
     if (dataType.empty())
-      newIntent.setData(jniURI);
+      newIntent.setData(dataURI);
     else
       newIntent.setDataAndType(jniURI, dataType);
   }

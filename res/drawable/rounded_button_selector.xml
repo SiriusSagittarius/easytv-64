@@ -1,0 +1,6 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Zustand, wenn der Button fokussiert ist -->
+    <item android:state_focused="true" android:drawable="@drawable/rounded_button_normal" />
+    <!-- Standardzustand (wenn kein Zustand aktiv ist) -->
+    <item android:drawable="@drawable/progresscolor" />
+</selector>

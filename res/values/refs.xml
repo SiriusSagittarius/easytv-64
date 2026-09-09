@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <drawable name="ic_rename" />
+    <drawable name="ic_new_file" />
+    <drawable name="ic_read_file" />
+    <drawable name="ic_new_directory" />
+    <drawable name="ic_zip" />
+    <drawable name="ic_unzip" />
+    <drawable name="ic_install" />
+</resources>

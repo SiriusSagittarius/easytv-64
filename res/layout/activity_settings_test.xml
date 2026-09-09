@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#7A9C94"
+        android:divider="?android:attr/dividerVertical"
+        android:dividerPadding="8dp"
+        android:orientation="vertical"
+        android:showDividers="middle">
+
+        <!-- Switches -->
+        <Switch
+            android:id="@+id/swFullscreen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FULLSCREEN"
+            android:textColor="#FFFDFD"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Switch
+            android:id="@+id/swDarkmode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DARK MODE"
+            android:textColor="#F1EEEE"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Switch
+            android:id="@+id/swMousemode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MOUSE MODE"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Switch
+            android:id="@+id/swJavascript"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="JAVASCRIPT"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Switch
+            android:id="@+id/swAdblock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ADBLOCK "
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Switch
+            android:id="@+id/swMediaGesture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Medien erfordern Nutzer-Geste"
+            android:textColor="#FDFAFA"
+            android:textStyle="bold" />
+
+        <Switch
+            android:id="@+id/swLoadsImages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bilder automatisch laden"
+            android:textColor="#FBF7F7"
+            android:textStyle="bold" />
+
+        <Switch
+            android:id="@+id/swJsOpenWindows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="JS darf Fenster öffnen"
+            android:textColor="#F1EDED"
+            android:textStyle="bold" />
+
+        <!-- User Agent Auswahl -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="User Agent"
+            android:textColor="#FAF4F4"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spUseragent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Max Favorites -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Max Favorites"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etMaxFavorites"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:hint="100"
+                android:inputType="number" />
+        </LinearLayout>
+
+        <!-- Max History -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Max History"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etMaxHistory"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:hint="100"
+                android:inputType="number" />
+        </LinearLayout>
+
+        <!-- Max Clipboard -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Max Clipboard"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etMaxClipboard"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:hint="50"
+                android:inputType="number" />
+        </LinearLayout>
+
+        <!-- Remote Config -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Remote Config"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etRemoteConfig"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:hint="Config"
+                android:inputType="text"
+                android:textColor="@color/primary_text" />
+        </LinearLayout>
+
+        <!-- Download-Ordner -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Download-Ordner"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etDownloadPath"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:hint="/storage/emulated/0/EASYTV"
+                android:inputType="textUri"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnReload"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reload" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="Save" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

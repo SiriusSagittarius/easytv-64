@@ -5,9 +5,9 @@ host_alias=aarch64-linux-android
 fi
 
 LD="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/ld"
-CC="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
-CXX="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++"
-CPP="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -E"
+CC="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"
+CXX="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang++"
+CPP="/usr/bin/ccache /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang -E"
 AR="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
 AS="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-as"
 NM="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm"
@@ -16,14 +16,14 @@ RANLIB="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/
 OBJDUMP="/home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-objdump"
 
 if test "android" = "darwin_embedded" ; then
-  export AS="/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/gas-preprocessor.pl /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -arch arm64-v8a"
-  export CCAS="--tag CC /home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/gas-preprocessor.pl /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -arch arm64-v8a"
+  export AS="/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/gas-preprocessor.pl /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang -arch arm64-v8a"
+  export CCAS="--tag CC /home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/gas-preprocessor.pl /home/sven/android-tools/android-sdk-linux/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang -arch arm64-v8a"
 fi
 
-CFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -DNDEBUG=1 -Os  -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-release/include/android-21 $CFLAGS"
-LDFLAGS="-Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -L/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-release/lib/android-21   $LDFLAGS"
-CXXFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -frtti -DNDEBUG=1 -Os  -std=c++17 -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-release/include/android-21 $CXXFLAGS"
-CPPFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -DNDEBUG=1 -Os  -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-release/include/android-21 $CPPFLAGS"
+CFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -DNDEBUG=1 -Os  -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-24-release/include/android-24 $CFLAGS"
+LDFLAGS="-Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -L/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-24-release/lib/android-24   $LDFLAGS"
+CXXFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -frtti -DNDEBUG=1 -Os  -std=c++17 -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-24-release/include/android-24 $CXXFLAGS"
+CPPFLAGS="-DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -DNDEBUG=1 -Os  -isystem /home/sven/easytv-64/xbmc-depends/aarch64-linux-android-24-release/include/android-24 $CPPFLAGS"
 
 export PKG_CONFIG=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/pkg-config
 export NASM=/home/sven/easytv-64/xbmc-depends/x86_64-linux-gnu-native/bin/nasm
@@ -45,7 +45,7 @@ ac_cv_search_dlopen=-ldl
 
 #libgcrypt
 if test "${PACKAGE_NAME}" = "libgcrypt"; then
-  ac_cv_path_GPG_ERROR_CONFIG=/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-release/bin/gpg-error-config
+  ac_cv_path_GPG_ERROR_CONFIG=/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-24-release/bin/gpg-error-config
   ac_cv_sys_symbol_underscore=no
   CFLAGS="$CFLAGS -std=gnu99"
 fi
@@ -63,7 +63,7 @@ if test "android" = "android"; then
   ac_cv_func_rand=yes
 
   #python: android doesn't have libutil
-  PYTHON_LDFLAGS="-L/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-21-release/lib -lpython${PYTHON_VERSION} -lc -ldl -lm -lexpat -lffi -lintl -lssl -lcrypto"
+  PYTHON_LDFLAGS="-L/home/sven/easytv-64/xbmc-depends/aarch64-linux-android-24-release/lib -lpython${PYTHON_VERSION} -lc -ldl -lm -lexpat -lffi -lintl -lssl -lcrypto"
 
 fi
 

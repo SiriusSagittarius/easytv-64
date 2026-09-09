@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingDefaultResource">
+
+    <item
+        android:id="@+id/list_past"
+        android:icon="@drawable/ic_list"
+        android:title="PASTE" />
+
+    <item
+        android:id="@+id/menu_copy"
+        android:icon="@drawable/ic_copy"
+        android:title="COPY" />
+    <item
+        android:id="@+id/option"
+        android:icon="@drawable/ic_search"
+        android:title="SETTINGS" />
+    <item
+        android:id="@+id/favorites"
+        android:icon="@drawable/ic_favorite"
+        android:title="FAVORITES" />
+    <item
+        android:id="@+id/full"
+        android:icon="@android:drawable/ic_menu_crop"
+        android:title="FULLSCREEN" />
+
+
+</menu>

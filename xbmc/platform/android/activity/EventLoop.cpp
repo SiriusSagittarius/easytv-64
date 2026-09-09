@@ -36,7 +36,9 @@ void CEventLoop::run(IActivityHandler &activityHandler, IInputHandler &inputHand
   while (true)
   {
     // We will block forever waiting for events.
-    while ((ident = ALooper_pollAll(-1, NULL, &events, (void**)&source)) >= 0)
+    // NDK removed ALooper_pollAll (obsoleted); ALooper_pollOnce is the direct
+    // replacement here since the outer while(true) already re-polls indefinitely.
+    while ((ident = ALooper_pollOnce(-1, NULL, &events, (void**)&source)) >= 0)
     {
       // Process this event.
       if (source != NULL)

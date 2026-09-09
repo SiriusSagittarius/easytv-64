@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="user_agents_labels">
+        <item>Chrome (Mobile)</item>
+        <item>Chrome (Desktop)</item>
+        <item>Firefox (Mobile)</item>
+        <item>Firefox (Desktop)</item>
+        <item>Edge (Desktop)</item>
+        <item>Safari (iPhone)</item>
+        <item>Safari (iPad)</item>
+        <item>Opera (Desktop)</item>
+    </string-array>
+
+
+    <string-array name="user_agents_values">
+
+        <item>Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36</item>
+
+
+        <item>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36</item>
+
+
+        <item>Mozilla/5.0 (Android 11; Mobile; rv:116.0) Gecko/116.0 Firefox/116.0</item>
+
+
+        <item>Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:116.0) Gecko/20100101 Firefox/116.0</item>
+
+
+        <item>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.81</item>
+
+
+        <item>Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1</item>
+
+        <item>Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1</item>
+
+
+        <item>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 OPR/102.0.0.0</item>
+    </string-array>
+</resources>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Switches -->
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="fullscreen"
+        android:icon="@drawable/ic_desktop"
+        android:title="FullScreen" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:icon="@drawable/ic_darkmode"
+        android:key="darkmode"
+        android:title="Dark Mode"/>
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:icon="@drawable/ic_fire"
+        android:key="mousemode"
+        android:title="Mouse Mode" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:icon="@drawable/ic_desktop"
+        android:key="javascript"
+        android:title="JavaScript aktivieren" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:icon="@drawable/wwww"
+        android:key="adblock"
+        android:title="Adblock aktivieren" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:icon="@drawable/ic_reload"
+        android:key="mediaPlaybackRequiresUserGesture"
+        android:title="Medien erfordern Nutzer-Geste" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:icon="@android:drawable/ic_dialog_dialer"
+        android:key="loadsImagesAutomatically"
+        android:title="Bilder automatisch laden" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:icon="@drawable/vorn"
+        android:key="javaScriptCanOpenWindowsAutomatically"
+        android:title="JS darf Fenster öffnen" />
+
+    <ListPreference
+        android:defaultValue="chrome_mobile"
+        android:entries="@array/user_agents_labels"
+        android:entryValues="@array/user_agents_values"
+        android:icon="@drawable/ic_list"
+        android:key="useragent"
+        android:title="User-Agent" />
+
+    <!-- Eingabefelder -->
+    <EditTextPreference
+        android:defaultValue="100"
+        android:dialogTitle="Anzahl Favorites"
+        android:icon="@drawable/ic_favorite"
+        android:inputType="number"
+        android:key="max_favorites"
+        android:title="Max Favorites" />
+
+    <EditTextPreference
+        android:defaultValue="100"
+        android:dialogTitle="Anzahl History"
+        android:icon="@android:drawable/stat_notify_chat"
+        android:inputType="number"
+        android:key="max_history"
+        android:title="Max History" />
+
+    <EditTextPreference
+        android:defaultValue="50"
+        android:dialogTitle="Anzahl Clipboard"
+        android:icon="?attr/actionModePasteDrawable"
+        android:inputType="number"
+        android:key="max_clipboard"
+        android:title="Max Clipboard" />
+
+    <EditTextPreference
+        android:dialogTitle="Remote Config"
+        android:icon="@drawable/www"
+        android:inputType="text"
+        android:key="remote_config"
+        android:title="Remote Config" />
+
+    <EditTextPreference
+        android:defaultValue="/sdcard/Download/EASYTV"
+        android:dialogTitle="Download-Ordner wählen"
+        android:icon="@drawable/ic_download"
+        android:inputType="textUri"
+        android:key="download_path"
+        android:title="Download-Ordner" />
+
+    <!-- Buttons -->
+    <Preference
+        android:key="btn_reload"
+        android:summary="Neu laden der gespeicherten Werte"
+        android:title="Reload Einstellungen" />
+
+    <Preference
+        android:key="btn_save"
+        android:summary="Einstellungen übernehmen"
+        android:title="Speichern" />
+
+    <Preference
+        android:key="btn_clear_history"
+        android:summary="Gesamten Browserverlauf entfernen"
+        android:title="Verlauf löschen" />
+
+</PreferenceScreen>
