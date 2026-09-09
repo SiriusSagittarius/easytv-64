@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,7 +10,7 @@ import android.util.Log;
 
 public class XBMCProperties
 {
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   private static boolean isInitialized()
   {

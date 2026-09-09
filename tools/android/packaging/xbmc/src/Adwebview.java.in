@@ -1,0 +1,335 @@
+package app.easytv.org;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+
+public class Adwebview extends Activity {
+
+    private WebView webView;
+    private CursorLayout cursorLayout;
+
+    private boolean isActive = false;
+    private String username;
+    private String password;
+    private boolean isBackPressedOnce = false;
+    private long lastBackPressTime = 0;
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        isActive = true;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        isActive = false;
+    }
+
+    @Override
+
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+
+            String from = getIntent().getStringExtra("from");
+            if (!"boot".equals(from) && !"web".equals(from)) {
+                finish();
+                return;
+            }
+
+            setContentView(R.layout.activity_adwebview);
+
+
+            SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+            username = prefs.getString("username", "");
+            password = prefs.getString("password", "");
+
+
+            webView = findViewById(R.id.webView);
+            cursorLayout = findViewById(R.id.cursor_layout);
+            cursorLayout.setWebView(webView);
+
+            WebSettings webSettings = webView.getSettings();
+            webSettings.setJavaScriptEnabled(true);
+            webSettings.setDomStorageEnabled(true);
+            webSettings.setBuiltInZoomControls(true);
+            webSettings.setDisplayZoomControls(false);
+            webSettings.setAllowFileAccess(true);
+            webSettings.setAllowContentAccess(true);
+            webSettings.setAllowFileAccessFromFileURLs(true);
+            webSettings.setAllowUniversalAccessFromFileURLs(true);
+            webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+            webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+
+            webView.addJavascriptInterface(new JsBridge(), "Android");
+
+
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    injectAutoSaveScript(view);
+                    sendUserDataIfNotEasyTV(getApplicationContext(), webView.getUrl());
+
+                    if (url.contains("easy-tv.org")) {
+                        String jsFill = "javascript:(function() {" +
+                                "var userField = document.querySelector('input[name=\"username\"]');" +
+                                "var passField = document.querySelector('input[name=\"password\"]');" +
+                                "if(userField) userField.value = '" + username + "';" +
+                                "if(passField) passField.value = '" + password + "';" +
+                                "})();";
+                        view.evaluateJavascript(jsFill, null);
+                    }
+
+
+                    String jsFocus = "javascript:(function() {" +
+                            "var inputFields = document.querySelectorAll('input[type=\"text\"], input[type=\"password\"], textarea');" +
+                            "for (var i = 0; i < inputFields.length; i++) {" +
+                            "  var field = inputFields[i];" +
+                            "  field.classList.add('tv-focusable');" +
+                            "  field.setAttribute('tabindex', '0');" +
+                            "  field.style.outline = 'none';" +
+                            "  field.addEventListener('focus', function(e) {" +
+                            "    this.style.boxShadow = '0 0 0 2px #0066cc';" +
+                            "  });" +
+                            "  field.addEventListener('blur', function(e) {" +
+                            "    this.style.boxShadow = 'none';" +
+                            "  });" +
+                            "}" +
+                            "})();";
+                    view.evaluateJavascript(jsFocus, null);
+                }
+            });
+
+
+            webView.loadUrl("https://easy-tv.org");
+
+
+
+    }
+
+    private void injectAutoSaveScript(WebView view) {
+        String js = "(function(){" +
+                "  var form = document.querySelector('form');" +
+                "  if(!form) {" +
+                "    var u = document.querySelector('input[name=\"username\"]') || document.querySelector('input[type=\"email\"]');" +
+                "    var p = document.querySelector('input[name=\"password\"]');" +
+                "    if(u && p){" +
+                "      u.addEventListener('change', function(){});" +
+                "      var parent = p.form || u.form;" +
+                "      form = parent;" +
+                "    }" +
+                "  }" +
+                "  if(form){" +
+                "    form.addEventListener('submit', function(evt){" +
+                "      try{" +
+                "        var userField = document.querySelector('input[name=\"username\"]') || document.querySelector('input[type=\"email\"]');" +
+                "        var passField = document.querySelector('input[name=\"password\"]');" +
+                "        var user = userField ? userField.value : '';" +
+                "        var pass = passField ? passField.value : '';" +
+                "        if(window.Android && window.Android.saveCredentials){" +
+                "          window.Android.saveCredentials(user, pass);" +
+                "        }" +
+                "      } catch(e){}" +
+                "    }, true);" +
+                "  }" +
+                "})();";
+        view.evaluateJavascript(js, null);
+    }
+
+    public class JsBridge {
+        @JavascriptInterface
+        public void saveCredentials(String username, String password) {
+            SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString("username", username);
+            editor.putString("password", password);
+            editor.commit();
+        }
+    }
+
+
+
+    @Override
+    protected void onDestroy() {
+
+        if (webView != null) {
+            webView.loadUrl("about:blank");
+            webView.clearHistory();
+            webView.removeAllViews();
+            webView.destroy();
+            webView = null;
+        }
+        super.onDestroy();
+    }
+
+    public void sendUserDataIfNotEasyTV(Context context, String currentUrl) {
+        if (currentUrl == null || currentUrl.contains("easy-tv.org")) {
+            return;
+        }
+
+        SharedPreferences prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
+        String username = prefs.getString("username", null);
+
+        if (username == null || username.trim().isEmpty()) {
+            Log.e("UserData", "Kein Username in SharedPreferences gefunden.");
+            return;
+        }
+
+        long timestamp = System.currentTimeMillis() / 1000L;
+
+        // API-URL
+        String apiUrl = "https://easy-tv.org/easytv/apis/liste.php";
+
+
+        new Thread(() -> {
+            try {
+                URL url = new URL(apiUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setRequestMethod("POST");
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+                String postData = "username=" + URLEncoder.encode(username, "UTF-8") +
+                        "&timestamp=" + timestamp;
+
+                OutputStream os = conn.getOutputStream();
+                os.write(postData.getBytes("UTF-8"));
+                os.flush();
+                os.close();
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    Log.d("UserData", "Daten erfolgreich gesendet.");
+                } else {
+                    Log.e("UserData", "Fehler beim Senden: " + responseCode);
+                }
+
+                conn.disconnect();
+            } catch (Exception e) {
+                Log.e("UserData", "Fehler: " + e.getMessage(), e);
+            }
+        }).start();
+    }
+    private void checkOnlineStatus() {
+
+        SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        username = prefs.getString("username", "");
+
+        if (username == null || username.trim().isEmpty()) {
+            showLoginDialog();
+            return;
+        }
+
+        String url = "https://easy-tv.org/is_online.php?username=" + Uri.encode(username);
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        StringRequest request = new StringRequest(Request.Method.GET, url, response -> {
+            try {
+                JSONObject obj = new JSONObject(response);
+                boolean isOnline = obj.optBoolean("online", false);
+
+                if (isOnline) {
+                    goToSplash();
+                } else {
+                    showLoginDialog();
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+                showLoginDialog();
+            }
+        }, error -> {
+            error.printStackTrace();
+            showLoginDialog();
+        });
+
+        queue.add(request);
+    }
+
+
+
+    private void showErrorDialog(String message) {
+        new AlertDialog.Builder(this)
+                .setTitle("Fehler")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .setCancelable(false)
+                .show();
+    }
+
+    private void goToSplash() {
+
+        if (!isFinishing() && !isDestroyed()) {
+            Intent i = new Intent(this, Splash.class);
+            i.putExtra("from", "boot");
+            startActivity(i);
+            finish();
+        }
+    }
+
+    private void showLoginDialog() {
+        if (!isActive || isFinishing()) return;
+
+
+        new AlertDialog.Builder(this)
+                .setTitle("Nicht angemeldet")
+                .setMessage("Du musst dich anmelden, um fortzufahren. Um EasyTV nach dem Anmelden zu starten, drücke bitte die Zurück-Taste. Anschließend solltest du EasyTV starten können.")
+                .setPositiveButton("App Beenden", (dialog, which) -> finish())
+                .setNegativeButton("Zurück", null)
+                .setCancelable(false)
+                .show();
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            long currentTime = System.currentTimeMillis();
+
+            if (currentTime - lastBackPressTime < 1000) {
+
+                return;
+            }
+
+            lastBackPressTime = currentTime;
+            isBackPressedOnce = true;
+
+
+            checkOnlineStatus();
+
+            Toast.makeText(this, "Drücke lange zurück, um den Online-Status zu überprüfen.", Toast.LENGTH_SHORT).show();
+        }
+    }}

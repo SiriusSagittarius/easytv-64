@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,7 +10,7 @@ public class XBMCBroadcastReceiver extends BroadcastReceiver
 {
   native void _onReceive(Intent intent);
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   @Override
   public void onReceive(Context context, Intent intent)
@@ -19,10 +19,10 @@ public class XBMCBroadcastReceiver extends BroadcastReceiver
     {
       if (XBMCProperties.getBoolProperty("xbmc.autostart"))
       {
-        // Run @APP_NAME@
+        // Run EasyTV
         Intent i = new Intent();
         PackageManager manager = context.getPackageManager();
-        i = manager.getLaunchIntentForPackage("@APP_PACKAGE@");
+        i = manager.getLaunchIntentForPackage("app.easytv.org");
         i.addCategory(Intent.CATEGORY_LAUNCHER);
         context.startActivity(i);
       }

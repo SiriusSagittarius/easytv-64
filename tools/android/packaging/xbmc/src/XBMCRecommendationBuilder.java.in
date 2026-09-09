@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -7,14 +7,14 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 
-import @APP_PACKAGE@.R;
+import app.easytv.org.R;
 
 /*
  * This class builds recommendations as notifications with videos as inputs.
  */
 public class XBMCRecommendationBuilder
 {
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   private Context mContext;
 

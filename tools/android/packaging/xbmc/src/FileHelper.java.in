@@ -1,0 +1,146 @@
+package app.easytv.org;
+
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.os.Environment;
+import android.util.Log;
+import android.widget.Toast;
+
+import androidx.documentfile.provider.DocumentFile;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+public class FileHelper {
+
+    private static final String TAG = "FileHelper";
+
+    public static void unzipFile(Context context, DocumentFile zipFile, DocumentFile outputDir) {
+        if (zipFile == null || !zipFile.exists() || outputDir == null || !outputDir.isDirectory()) {
+            Toast.makeText(context, "Invalid file or target directory", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ProgressDialog progressDialog = new ProgressDialog(context);
+        progressDialog.setMessage("Unpacking ZIP...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        new Thread(() -> {
+            try (InputStream is = context.getContentResolver().openInputStream(zipFile.getUri());
+                 ZipInputStream zis = new ZipInputStream(is)) {
+
+                ZipEntry entry;
+                byte[] buffer = new byte[8192];
+
+                while ((entry = zis.getNextEntry()) != null) {
+                    File newFile = new File(Environment.getExternalStorageDirectory(),
+                            outputDir.getName() + "/" + entry.getName());
+
+                    if (entry.isDirectory()) {
+                        if (!newFile.exists() && !newFile.mkdirs()) {
+                            Log.e(TAG, "Failed to create dir: " + newFile.getAbsolutePath());
+                        }
+                    } else {
+                        File parent = newFile.getParentFile();
+                        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                            Log.e(TAG, "Failed to create parent dir: " + parent.getAbsolutePath());
+                        }
+
+                        try (OutputStream os = new FileOutputStream(newFile)) {
+                            int len;
+                            while ((len = zis.read(buffer)) != -1) {
+                                os.write(buffer, 0, len);
+                            }
+                        }
+                    }
+                    zis.closeEntry();
+                }
+
+                runOnUiThread(context, () -> {
+                    Toast.makeText(context, "ZIP successfully unpacked", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "Unzip error: " + e.getMessage(), e);
+                runOnUiThread(context, () -> {
+                    Toast.makeText(context, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    progressDialog.dismiss();
+                });
+            }
+        }).start();
+    }
+
+
+    public static void zipFiles(Context context, List<DocumentFile> files, DocumentFile outputZip) {
+        if (files == null || files.isEmpty() || outputZip == null) {
+            Toast.makeText(context, "No files selected or invalid output path", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ProgressDialog progressDialog = new ProgressDialog(context);
+        progressDialog.setMessage("Zipping files...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        new Thread(() -> {
+            try (OutputStream os = new FileOutputStream(String.valueOf(outputZip));
+                 ZipOutputStream zos = new ZipOutputStream(os)) {
+
+                for (DocumentFile file : files) {
+                    addFileToZip(file, "", zos);
+                }
+                zos.finish();
+                runOnUiThread(context, () -> Toast.makeText(context, "ZIP created successfully: " + outputZip.getName(), Toast.LENGTH_LONG).show());
+            } catch (IOException e) {
+                Log.e(TAG, "Error while zipping: " + e.getMessage(), e);
+                runOnUiThread(context, () -> Toast.makeText(context, "Error while zipping: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            } finally {
+                progressDialog.dismiss();
+            }
+        }).start();
+    }
+
+    private static void addFileToZip(DocumentFile file, String parentDir, ZipOutputStream zos) throws IOException {
+        String zipEntryName = parentDir + file.getName();
+        if (file.isDirectory()) {
+            // Recurse into subdirectories
+            DocumentFile[] children = file.listFiles();
+            if (children != null) {
+                for (DocumentFile child : children) {
+                    addFileToZip(child, zipEntryName + "/", zos);
+                }
+            }
+        } else {
+            try (InputStream fis = new FileInputStream(String.valueOf(file))) {
+                ZipEntry entry = new ZipEntry(zipEntryName);
+                zos.putNextEntry(entry);
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = fis.read(buffer)) > 0) {
+                    zos.write(buffer, 0, length);
+                }
+                zos.closeEntry();
+            }
+        }
+    }
+
+    private static void runOnUiThread(Context context, Runnable runnable) {
+        // This method assumes the context is a class that has runOnUiThread method, like an Activity.
+        // It's a simple way to call UI-related methods from a background thread.
+        // You might need to adjust this depending on your class structure.
+        if (context instanceof DownloadList) {
+            ((DownloadList) context).runOnUiThread(runnable);
+        }
+    }
+}
+

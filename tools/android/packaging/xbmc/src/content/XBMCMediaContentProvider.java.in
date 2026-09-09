@@ -1,4 +1,4 @@
-package @APP_PACKAGE@.content;
+package app.easytv.org.content;
 
 import android.app.SearchManager;
 import android.content.ContentValues;
@@ -7,11 +7,11 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 
-import @APP_PACKAGE@.XBMCJsonRPC;
+import app.easytv.org.XBMCJsonRPC;
 
 public class XBMCMediaContentProvider extends XBMCContentProvider
 {
-  private static String TAG = "@APP_NAME@";
+  private static String TAG = "EasyTV";
 
   public static final String AUTHORITY = AUTHORITY_ROOT + ".media";
   public static final String SUGGEST_PATH = "suggestions";

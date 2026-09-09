@@ -1,0 +1,1968 @@
+package app.easytv.org;
+
+import static android.view.KeyEvent.KEYCODE_BACK;
+
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity; // Hinzugefügt
+import android.app.AlertDialog;
+import android.app.DownloadManager;
+import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException; // Hinzugefügt
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Build.VERSION_CODES;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.PowerManager;
+import android.preference.PreferenceManager;
+import android.text.InputType;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
+import android.webkit.MimeTypeMap;
+import android.webkit.URLUtil;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+
+import com.google.android.material.navigation.NavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import app.easytv.org.data.EasyTvDb;
+import app.easytv.org.util.ActivityTracker;
+import app.easytv.org.util.WebViewHelper;
+
+public class WebActivity extends AppCompatActivity {
+
+    private boolean strictShieldEnabled = true;
+    private boolean hasDetectedVideo = false;
+    private boolean userClickedLink = false;
+    private List<String> blockList;
+    private WebViewHelper.WebViewSettings settings;
+    public static WebView webView;
+    private CursorLayout cursorLayout;
+    private long lastBackPressTime = 0;
+    private static final int BACK_PRESS_INTERVAL = 2000;
+
+    private ClipboardManager clipboardManager;
+    private PowerManager.WakeLock wakeLock;
+    private ProgressBar progressBar;
+    private static WebActivity instance;
+
+    private String downloadUrl;
+    private static final int REQUEST_CODE_SAVE_FILE = 9999;
+
+    // NEUE KONSTANTE FÜR DATEIUPLOAD
+    private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
+    // NEUE VARIABLE FÜR DATEIUPLOAD CALLBACK
+    private ValueCallback<Uri[]> filePathCallback;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ProgressDialog progressDialog;
+    private TextView fileNameText, progressPercent, binHint;
+    private long downloadId;
+
+    public String currentUrl;
+    public String url;
+    public String title;
+
+    private EditText inputText;
+
+
+    private DrawerLayout drawerLayout;
+    private LinearLayout tabContainer;
+    private FrameLayout webviewContainer;
+    private final List<WebView> tabs = new ArrayList<>();
+    private final int currentTabIndex = -1;
+    private NavigationView navigationView;
+
+    private ImageButton goButton, favoriteButton, helpButton, searchButton, downButton, upButton;
+    private EditText urlInput;
+
+    private boolean isBarVisible = false;
+
+    public WebActivity() {
+    }
+
+    public static WebActivity getWebInstance() {
+        return instance;
+    }
+
+    @RequiresApi(api = VERSION_CODES.Q)
+    @SuppressLint({"JavascriptInterface", "WrongViewCast", "ClickableViewAccessibility"})
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        SharedPreferences prefsApp = getSharedPreferences("app.easytv.org_preferences", MODE_PRIVATE);
+        boolean mouseMode = prefsApp.getBoolean("mousemode", false);
+
+        final int layout = mouseMode ? R.layout.activity_web_mouse : R.layout.activity_web_no_mouse;
+        setContentView(layout);
+
+        webView = findViewById(R.id.webView);
+
+        Intent startIntent = getIntent();
+
+
+        String extraUrl = startIntent.getStringExtra("url");
+        String startUrl;
+        if (extraUrl != null && !extraUrl.trim().isEmpty()) {
+            startUrl = extraUrl.trim();
+        } else if (Intent.ACTION_VIEW.equals(startIntent.getAction()) && startIntent.getData() != null) {
+            startUrl = startIntent.getData().toString();
+        } else {
+            startUrl = "https://easy-tv.org";
+        }
+
+
+
+        WebViewHelper.loadFromPrefsAndApply(this, webView);
+        settings = WebViewHelper.mapFromPrefs(
+                getSharedPreferences("app.easytv.org_preferences", MODE_PRIVATE)
+        );
+
+        if (settings.adblock) {
+            WebViewHelper.loadBlockList(this);
+            blockList = WebViewHelper.getBlockList();
+        }
+
+        setupFireTVKeyboardControl();
+
+        cursorLayout = findViewById(R.id.cursor_layout);
+        cursorLayout.setWebView(webView);
+
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.navigation_view);
+        tabContainer = findViewById(R.id.tabContainer);
+        webviewContainer = findViewById(R.id.webviewContainer);
+        View headerView = navigationView.getHeaderView(0);
+
+        progressBar = headerView.findViewById(R.id.progressBar);
+
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webSettings.setUseWideViewPort(true);
+        webSettings.setLoadWithOverviewMode(true);
+
+
+        if (Build.VERSION.SDK_INT >= VERSION_CODES.S) {
+            webView.getSettings().setSafeBrowsingEnabled(false);
+        }
+        webView.loadUrl(startUrl);
+
+        webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public void copyToClipboard(String text) {
+                if (text == null) return;
+                text = text.trim();
+                if (text.isEmpty()) return;
+
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("kopiert", text);
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(WebActivity.this, "Kopiert: " + text, Toast.LENGTH_SHORT).show();
+
+                try {
+                    EasyTvDb.get(WebActivity.this).addClipboardEntry(text);
+                } catch (Exception e) {
+                    android.util.Log.e("EasyTV", "Fehler beim Speichern in DB", e);
+                }
+            }
+        }, "EasyClipboard");
+
+        drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {}
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                Menu menu = navigationView.getMenu();
+                if (menu != null && menu.size() > 0) {
+                    MenuItem firstItem = menu.getItem(0);
+                    navigationView.setCheckedItem(firstItem.getItemId());
+
+                    navigationView.post(() -> {
+                        View navItemView = navigationView.findViewById(firstItem.getItemId());
+                        if (navItemView != null) {
+                            navItemView.requestFocus();
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {}
+
+            @Override
+            public void onDrawerStateChanged(int newState) {}
+        });
+
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_homepage) {
+                webView.loadUrl("https://easy-tv.org");
+                return true;
+            } else if (id == R.id.nav_open_url) {
+                showPopup();
+                item.setChecked(true);
+                return true;
+            } else if (id == R.id.nav_reload) {
+                webView.loadUrl(webView.getUrl());
+                Toast.makeText(this, "RELOAD", Toast.LENGTH_SHORT).show();
+                return true;
+            } else if (id == R.id.nav_favorites) {
+                FavoritesList();
+                return true;
+            } else if (id == R.id.nav_history) {
+                HistoryList();
+                return true;
+            } else if (id == R.id.nav_clean_cache) {
+                ClearData.clearAll(this);
+                Toast.makeText(this, "Daten wurden gelöscht", Toast.LENGTH_SHORT).show();
+                return true;
+            } else if (id == R.id.nav_downloads) {
+                DownloadList();
+                return true;
+            } else if (id == R.id.nav_update_check) {
+                startupdate();
+                return true;
+            } else if (id == R.id.nav_quit) {
+                startMainActivity();
+            }
+            drawerLayout.closeDrawers();
+            return true;
+        });
+
+        Intent intentView = getIntent();
+        String action = intentView.getAction();
+        Uri data = intentView.getData();
+        if (Intent.ACTION_VIEW.equals(action) && data != null) {
+            String url = data.toString();
+            webView.loadUrl(url);
+        }
+
+        instance = this;
+
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptThirdPartyCookies(webView, true);
+
+        getWindow().setFlags(
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        );
+
+        webView.evaluateJavascript(
+                "(function() {" +
+                        "   document.addEventListener('mousemove', function(event) {" +
+                        "       const x = event.clientX;" +
+                        "       const y = event.clientY;" +
+                        "       const element = document.elementFromPoint(x, y);" +
+                        "       if (element) {" +
+                        "           console.log('Element unter dem Cursor:', element);" +
+                        "       }" +
+                        "   });" +
+                        "})()", null);
+
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor("#036967")));
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
+        webView.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                userClickedLink = true;
+            }
+            return false;
+        });
+
+        clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        }
+
+        webView.setHapticFeedbackEnabled(true);
+
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
+            String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+            startFileDownload(url, fileName, contentDisposition, mimetype, userAgent);
+        });
+
+        webView.setWebChromeClient(new WebChromeClient() {
+
+            // NEU: Methode für Datei-Uploads (Android 5.0+)
+            @RequiresApi(api = VERSION_CODES.LOLLIPOP)
+            @Override
+            public boolean onShowFileChooser(WebView webView,
+                                             ValueCallback<Uri[]> filePathCallback,
+                                             FileChooserParams fileChooserParams) {
+                // Speichere das Callback für die spätere Verwendung in onActivityResult
+                WebActivity.this.filePathCallback = filePathCallback;
+
+                Intent intent = fileChooserParams.createIntent();
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+                try {
+                    startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE);
+                } catch (ActivityNotFoundException e) {
+                    // Fehler beim Starten der Intent: Callback auf Null setzen
+                    WebActivity.this.filePathCallback = null;
+                    filePathCallback.onReceiveValue(null);
+                    return false;
+                }
+                return true;
+            }
+
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                if (newProgress == 100 && progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+            }
+
+            private View customView;
+            private WebChromeClient.CustomViewCallback customViewCallback;
+
+            @Override
+            public void onShowCustomView(View view, CustomViewCallback callback) {
+                if (customView != null) {
+                    onHideCustomView();
+                    return;
+                }
+                customView = view;
+                customViewCallback = callback;
+                if (webviewContainer != null) {
+                    webviewContainer.addView(view);
+                }
+                if (webView != null) {
+                    webView.setVisibility(View.GONE);
+                }
+                onVideoDetected("Fullscreen Video");
+            }
+
+            @Override
+            public void onHideCustomView() {
+                if (customView == null) return;
+                if (webviewContainer != null) {
+                    webviewContainer.removeView(customView);
+                }
+                if (webView != null) {
+                    webView.setVisibility(View.VISIBLE);
+                }
+                if (customViewCallback != null) {
+                    customViewCallback.onCustomViewHidden();
+                }
+                customView = null;
+                customViewCallback = null;
+            }
+        });
+
+
+        webView.addJavascriptInterface(new WebAppInterface(this), "AndroidInterface");
+
+        webView.setWebViewClient(new WebViewClient() {
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String reqUrl = request.getUrl().toString();
+                String lowerUrl = reqUrl.toLowerCase(Locale.ROOT);
+
+                if (strictShieldEnabled) {
+                    try {
+                        String currentHost = view.getUrl() != null ? Uri.parse(view.getUrl()).getHost() : null;
+                        String targetHost = Uri.parse(reqUrl).getHost();
+                        if (currentHost != null && targetHost != null && !targetHost.equalsIgnoreCase(currentHost)) {
+                            if (!userClickedLink && !lowerUrl.contains("login") && !lowerUrl.contains("auth") && !lowerUrl.contains("oauth")) {
+                                Toast.makeText(WebActivity.this, "PopUp / Umleitung blockiert: " + targetHost, Toast.LENGTH_SHORT).show();
+                                return true;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                if (lowerUrl.endsWith(".pdf") || lowerUrl.endsWith(".doc") || lowerUrl.endsWith(".docx") ||
+                        lowerUrl.endsWith(".xls") || lowerUrl.endsWith(".xlsx") || lowerUrl.endsWith(".ppt") ||
+                        lowerUrl.endsWith(".pptx") || lowerUrl.endsWith(".zip") || lowerUrl.endsWith(".rar") ||
+                        lowerUrl.endsWith(".mp3") || lowerUrl.endsWith(".mp4") || lowerUrl.endsWith(".avi") ||
+                        lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg") || lowerUrl.endsWith(".png") ||
+                        lowerUrl.endsWith(".gif") || lowerUrl.endsWith(".txt") || lowerUrl.endsWith(".json") ||
+                        lowerUrl.endsWith(".apk") || lowerUrl.contains("/download/file.php") ||
+                        lowerUrl.contains("file.php?id=")) {
+
+                    String fileName = URLUtil.guessFileName(reqUrl, null, null);
+                    startFileDownload(reqUrl, fileName, null, null, webView.getSettings().getUserAgentString());
+                    return true;
+                }
+                userClickedLink = true;
+                return false;
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+
+                if (!settings.adblock) {
+                    return super.shouldInterceptRequest(view, request);
+                }
+
+                String u = request.getUrl().toString();
+
+                for (String blocked : WebViewHelper.getBlockList()) {
+                    if (u.startsWith(blocked)) {
+                        return new WebResourceResponse(
+                                "text/plain",
+                                "utf-8",
+                                new ByteArrayInputStream("".getBytes())
+                        );
+                    }
+                }
+
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override
+            public void onPageStarted(WebView view, String u, Bitmap favicon) {
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.VISIBLE);
+                }
+                super.onPageStarted(view, u, favicon);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String u) {
+                super.onPageFinished(view, u);
+
+                updateActionBar(view.getTitle(), u);
+                writeUrlToHistory(u);
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                setTitle(u);
+                if (u.contains("10minutemail.net/m/?lang=de") || u.contains("10minutemail.net") ) {
+                    String jsGrabEmail =
+                            "(function() {" +
+                                    "  try {" +
+                                    "    var el = document.getElementById('fe_text');" +
+                                    "    if (el && el.value) {" +
+                                    "      AndroidInterface.showSelectedText(String(el.value));" +
+                                    "    }" +
+                                    "  } catch(e) {}" +
+                                    "})();";
+                    view.evaluateJavascript(jsGrabEmail, null);
+                }
+                if (u.contains("easy-tv.org")) {
+                    SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+                    String username = prefs.getString("username", "");
+                    String password = prefs.getString("password", "");
+
+                    String jsFill = "(function() {" +
+                            "var userField = document.querySelector('input[name=\"username\"]');" +
+                            "var passField = document.querySelector('input[name=\"password\"]');" +
+                            "if(userField) userField.value = '" + username + "';" +
+                            "if(passField) passField.value = '" + password + "';" +
+                            "})();";
+
+                    view.evaluateJavascript(jsFill, null);
+                }
+                if (u.contains("easy-tv.org/ucp.php?mode=register")) {
+                    SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+                    String email = prefs.getString("email", "");
+
+                    String jsFill =
+                            "(function() {" +
+                                    "var emailField = document.querySelector('input[name=\"email\"]');" +
+                                    "if(emailField) emailField.value = '" + email + "';" +
+                                    "})();";
+                    view.evaluateJavascript(jsFill, null);
+                }
+
+                if (u.contains("youtube.com") || u.contains("easy-tv.org")) {
+
+                    String jsAccept = "(function() {" +
+                            "var buttons = document.getElementsByTagName('button');" +
+                            "for (var i = 0; i < buttons.length; i++) {" +
+                            "  var b = buttons[i];" +
+                            "  var text = b.innerText.toLowerCase();" +
+                            "  if (text.includes('accept') || text.includes('verstanden') || text.includes('alle akzeptieren') || text.includes('zustimmen')) {" +
+                            "    b.click();" +
+                            "    break;" +
+                            "  }" +
+                            "}" +
+                            "})();";
+                    view.evaluateJavascript(jsAccept, null);
+                }
+
+                String jsFocus = "(function() {" +
+                        "  var inputFields = document.querySelectorAll('input[type=\"text\"], input[type=\"password\"], textarea');" +
+                        "  for (var i = 0; i < inputFields.length; i++) {" +
+                        "    var field = inputFields[i];" +
+                        "    field.classList.add('tv-focusable');" +
+                        "    field.setAttribute('tabindex', '0');" +
+                        "    field.style.outline = 'none';" +
+                        "    field.addEventListener('focus', function(e) {" +
+                        "      this.style.boxShadow = '0 0 0 2px #0066cc';" +
+                        "    });" +
+                        "    field.addEventListener('blur', function(e) {" +
+                        "      this.style.boxShadow = 'none';" +
+                        "    });" +
+                        "  }" +
+                        "})();";
+                view.evaluateJavascript(jsFocus, null);
+
+                String jsClipboardHook =
+                        "(function() {" +
+                                "function _safeCopy(t) {" +
+                                "  if (window.AndroidInterface && AndroidInterface.showSelectedText) {" +
+                                "    AndroidInterface.showSelectedText(String(t));" +
+                                "  }" +
+                                "}" +
+                                "if (!navigator.clipboard) { navigator.clipboard = {}; }" +
+                                "navigator.clipboard.writeText = function(t) {" +
+                                "  _safeCopy(t);" +
+                                "  return Promise.resolve();" +
+                                "};" +
+                                "window.copyEmailToClipboard = function(t) {" +
+                                "  _safeCopy(t);" +
+                                "};" +
+                                "})();";
+
+                view.evaluateJavascript(jsClipboardHook, null);
+
+                String jsShield = "(function() {" +
+                        "  window.open = function() { console.log('PopUp blockiert'); return null; };" +
+                        "  document.addEventListener('play', function(e) {" +
+                        "    if (e.target && e.target.tagName === 'VIDEO') {" +
+                        "      if (window.AndroidInterface && window.AndroidInterface.onVideoDetected) {" +
+                        "        window.AndroidInterface.onVideoDetected(e.target.currentSrc || e.target.src || '');" +
+                        "      }" +
+                        "    }" +
+                        "  }, true);" +
+                        "  if (" + strictShieldEnabled + ") {" +
+                        "    document.querySelectorAll('div[style*=\"z-index\"], iframe[src*=\"ad\"]').forEach(function(el) {" +
+                        "      if (el.offsetWidth >= window.innerWidth * 0.85 && el.offsetHeight >= window.innerHeight * 0.85 && !el.querySelector('video')) {" +
+                        "        el.remove();" +
+                        "      }" +
+                        "    });" +
+                        "  }" +
+                        "})();";
+                view.evaluateJavascript(jsShield, null);
+            }
+        });
+
+        webView.setOnLongClickListener(v -> {
+            final WebView.HitTestResult result = webView.getHitTestResult();
+            if (result != null &&
+                    (result.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
+                            result.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE)) {
+
+                String u = result.getExtra();
+                if (u != null && !u.isEmpty()) {
+                    showLinkContextMenu(u, null);
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        webView.setDownloadListener((u, userAgent, contentDisposition, mimeType, contentLength) -> {
+            String fileName = URLUtil.guessFileName(u, contentDisposition, mimeType);
+            startFileDownload(u, fileName, contentDisposition, mimeType, userAgent);
+        });
+
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                "MyApp::WakeLockTag"
+        );
+        if (wakeLock != null && !wakeLock.isHeld()) {
+            wakeLock.acquire();
+        }
+    }
+
+    public void showLinkContextMenu(String linkUrl, String linkText) {
+        if (linkUrl == null || linkUrl.trim().isEmpty()) return;
+
+        String dialogTitle = (linkText != null && !linkText.trim().isEmpty()) ? linkText.trim() : linkUrl;
+        if (dialogTitle.length() > 60) {
+            dialogTitle = dialogTitle.substring(0, 57) + "...";
+        }
+
+        String[] options = new String[]{
+                "Link kopieren",
+                "Im selben Fenster öffnen",
+                "In neuem Fenster öffnen",
+                "Zu Favoriten hinzufügen",
+                "Link herunterladen",
+                "In Easy-TV abspielen"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle(dialogTitle)
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0: // Link kopieren
+                            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                            ClipData clip = ClipData.newPlainText("Link", linkUrl);
+                            if (clipboard != null) {
+                                clipboard.setPrimaryClip(clip);
+                            }
+                            try {
+                                EasyTvDb.get(this).addClipboardEntry(linkUrl);
+                            } catch (Exception ignored) {}
+                            Toast.makeText(this, "Link in Zwischenablage kopiert", Toast.LENGTH_SHORT).show();
+                            break;
+
+                        case 1: // Im selben Fenster öffnen
+                            if (webView != null) {
+                                webView.loadUrl(linkUrl);
+                            }
+                            break;
+
+                        case 2: // In neuem Fenster öffnen
+                            Intent newTabIntent = new Intent(this, WebActivity.class);
+                            newTabIntent.putExtra("url", linkUrl);
+                            startActivity(newTabIntent);
+                            break;
+
+                        case 3: // Zu Favoriten hinzufügen
+                            String favTitle = (linkText != null && !linkText.trim().isEmpty()) ? linkText.trim() : linkUrl;
+                            EasyTvDb.get(this).insertFavoriteIfAbsent("", linkUrl, favTitle);
+                            try {
+                                SQLiteDatabase db = EasyTvDb.get(this).getWritableDatabase();
+                                db.execSQL("CREATE TABLE IF NOT EXISTS web_favorites (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL, title TEXT, favicon TEXT)");
+                                ContentValues cv = new ContentValues();
+                                cv.put("url", linkUrl);
+                                cv.put("title", favTitle);
+                                cv.put("favicon", "");
+                                db.insertWithOnConflict("web_favorites", null, cv, SQLiteDatabase.CONFLICT_IGNORE);
+                            } catch (Exception ignored) {}
+                            Toast.makeText(this, "Zu Favoriten hinzugefügt", Toast.LENGTH_SHORT).show();
+                            break;
+
+                        case 4: // Link herunterladen
+                            String fileName = URLUtil.guessFileName(linkUrl, null, null);
+                            startFileDownload(linkUrl, fileName, null, null, webView != null ? webView.getSettings().getUserAgentString() : null);
+                            break;
+
+                        case 5: // In Easy-TV abspielen (JSON-RPC)
+                            playMediaInEasyTv(linkUrl);
+                            break;
+                    }
+                })
+                .setNegativeButton("Abbrechen", null)
+                .show();
+    }
+
+    public void playMediaInEasyTv(String mediaUrl) {
+        try {
+            String cookie = CookieManager.getInstance().getCookie(mediaUrl);
+            String userAgent = webView != null ? webView.getSettings().getUserAgentString() : null;
+
+            StringBuilder fullUrl = new StringBuilder(mediaUrl);
+            StringBuilder headers = new StringBuilder();
+
+            if (userAgent != null && !userAgent.isEmpty()) {
+                headers.append("User-Agent=").append(URLEncoder.encode(userAgent, "UTF-8"));
+            }
+            if (cookie != null && !cookie.isEmpty()) {
+                if (headers.length() > 0) headers.append("&");
+                headers.append("Cookie=").append(URLEncoder.encode(cookie, "UTF-8"));
+            }
+
+            if (headers.length() > 0) {
+                fullUrl.append("|").append(headers.toString());
+            }
+
+            String encodedUrl = URLEncoder.encode(fullUrl.toString(), "UTF-8");
+            String pluginUrl = "plugin://plugin.autostart/?action=video&url=" + encodedUrl;
+
+            String jsonPayload = "{\"jsonrpc\":\"2.0\",\"method\":\"Player.Open\",\"params\":{\"item\":{\"file\":\"" + pluginUrl + "\"}},\"id\":1}";
+
+            OkHttpClient client = new OkHttpClient();
+            RequestBody body = RequestBody.create(jsonPayload, MediaType.parse("application/json; charset=utf-8"));
+            Request request = new Request.Builder()
+                    .url("http://localhost:8080/jsonrpc")
+                    .post(body)
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    runOnUiThread(() -> Toast.makeText(WebActivity.this, "Fehler beim Senden: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) {
+                    if (response.isSuccessful()) {
+                        runOnUiThread(() -> Toast.makeText(WebActivity.this, "In Easy-TV gestartet!", Toast.LENGTH_SHORT).show());
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(WebActivity.this, "Server-Fehler: " + response.code(), Toast.LENGTH_SHORT).show());
+                    }
+                }
+            });
+        } catch (Exception e) {
+            Toast.makeText(this, "Fehler: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void onVideoDetected(String src) {
+        if (!hasDetectedVideo) {
+            hasDetectedVideo = true;
+            runOnUiThread(() -> Toast.makeText(this, "Video erkannt! Video-Menü verfügbar.", Toast.LENGTH_SHORT).show());
+        }
+    }
+
+    public void showVideoPlayerMenu() {
+        String[] options = new String[]{
+                "▶ Start / Play",
+                "⏸ Pause / Stop",
+                "⏩ 10 Sek. vor-spulen",
+                "⏪ 10 Sek. zurück-spulen",
+                "⛶ Vollbild umschalten",
+                "🛡️ PopUp & Overlay Blocker: " + (strictShieldEnabled ? "EINGESCHALTET" : "AUSGESCHALTET"),
+                "❌ Schließen"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle("Videoplayer Steuerungen")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0: // Play
+                            if (webView != null) {
+                                webView.evaluateJavascript("document.querySelectorAll('video').forEach(function(v){ v.play(); });", null);
+                            }
+                            Toast.makeText(this, "Video gestartet", Toast.LENGTH_SHORT).show();
+                            break;
+                        case 1: // Pause
+                            if (webView != null) {
+                                webView.evaluateJavascript("document.querySelectorAll('video').forEach(function(v){ v.pause(); });", null);
+                            }
+                            Toast.makeText(this, "Video pausiert", Toast.LENGTH_SHORT).show();
+                            break;
+                        case 2: // Fast forward +10s
+                            if (webView != null) {
+                                webView.evaluateJavascript("document.querySelectorAll('video').forEach(function(v){ v.currentTime += 10; });", null);
+                            }
+                            break;
+                        case 3: // Rewind -10s
+                            if (webView != null) {
+                                webView.evaluateJavascript("document.querySelectorAll('video').forEach(function(v){ v.currentTime -= 10; });", null);
+                            }
+                            break;
+                        case 4: // Fullscreen
+                            if (webView != null) {
+                                webView.evaluateJavascript("var v = document.querySelector('video'); if (v) { if (document.fullscreenElement) { document.exitFullscreen(); } else if (v.requestFullscreen) { v.requestFullscreen(); } else if (v.webkitRequestFullscreen) { v.webkitRequestFullscreen(); } }", null);
+                            }
+                            break;
+                        case 5: // Toggle Strict Shield
+                            toggleStrictShield();
+                            break;
+                    }
+                })
+                .setNegativeButton("Schließen", null)
+                .show();
+    }
+
+    public void toggleStrictShield() {
+        strictShieldEnabled = !strictShieldEnabled;
+        if (webView != null) {
+            WebSettings s = webView.getSettings();
+            s.setJavaScriptCanOpenWindowsAutomatically(!strictShieldEnabled);
+            s.setSupportMultipleWindows(!strictShieldEnabled);
+        }
+        Toast.makeText(this, "PopUp & Overlay Blocker ist jetzt " + (strictShieldEnabled ? "EINGESCHALTET" : "AUSGESCHALTET"), Toast.LENGTH_SHORT).show();
+    }
+
+    private void startApkDownload(String url, String fileName) {
+        startFileDownload(url, fileName, null, "application/vnd.android.package-archive", webView != null ? webView.getSettings().getUserAgentString() : null);
+    }
+
+    private void startFileDownload(String url, String fileName, String contentDisposition, String mimeType, String userAgent) {
+        if (fileName == null || fileName.isEmpty() || fileName.equals("download") || fileName.endsWith(".bin") || fileName.endsWith(".php")) {
+            fileName = URLUtil.guessFileName(url, contentDisposition, mimeType);
+        }
+
+        Uri uri = Uri.parse(url);
+        DownloadManager.Request request = new DownloadManager.Request(uri);
+
+        request.setTitle(fileName);
+        request.setDescription("Download läuft...");
+
+        if (mimeType != null && !mimeType.isEmpty() && !mimeType.equals("text/html") && !mimeType.equals("text/plain")) {
+            request.setMimeType(mimeType);
+        } else {
+            String extension = MimeTypeMap.getFileExtensionFromUrl(url);
+            if (extension != null && !extension.isEmpty()) {
+                String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+                if (type != null) {
+                    request.setMimeType(type);
+                }
+            }
+        }
+
+        String cookie = CookieManager.getInstance().getCookie(url);
+        if (cookie != null && !cookie.isEmpty()) {
+            request.addRequestHeader("Cookie", cookie);
+        }
+
+        if (userAgent == null || userAgent.isEmpty()) {
+            userAgent = webView != null ? webView.getSettings().getUserAgentString() : null;
+        }
+        if (userAgent != null && !userAgent.isEmpty()) {
+            request.addRequestHeader("User-Agent", userAgent);
+        }
+
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        request.setVisibleInDownloadsUi(true);
+
+        if (Build.VERSION.SDK_INT >= VERSION_CODES.Q) {
+            request.setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, fileName);
+        } else {
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            request.setDestinationUri(Uri.fromFile(new File(downloadsDir, fileName)));
+        }
+
+        DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        final long currentDownloadId = downloadManager.enqueue(request);
+        downloadId = currentDownloadId;
+
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setTitle("Download");
+        progressDialog.setMessage("Lade herunter: " + fileName);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progressDialog.setIndeterminate(false);
+        progressDialog.setMax(100);
+        progressDialog.setCancelable(true);
+
+        progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Abbrechen", (dialog, which) -> {
+            try {
+                if (downloadManager != null) {
+                    downloadManager.remove(currentDownloadId);
+                }
+            } catch (Exception ignored) {}
+            Toast.makeText(WebActivity.this, "Download abgebrochen", Toast.LENGTH_SHORT).show();
+        });
+
+        progressDialog.setOnCancelListener(dialog -> {
+            try {
+                if (downloadManager != null) {
+                    downloadManager.remove(currentDownloadId);
+                }
+            } catch (Exception ignored) {}
+            Toast.makeText(WebActivity.this, "Download abgebrochen", Toast.LENGTH_SHORT).show();
+        });
+
+        progressDialog.show();
+
+        final String displayFileName = fileName;
+
+        new Thread(() -> {
+            boolean downloading = true;
+            boolean cancelledOrFailed = false;
+            DownloadManager.Query query = new DownloadManager.Query();
+            query.setFilterById(currentDownloadId);
+
+            while (downloading) {
+                Cursor cursor = downloadManager.query(query);
+                if (cursor != null && cursor.moveToFirst()) {
+                    int status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+                    int bytesDownloaded = cursor.getInt(cursor.getColumnIndexOrThrow(
+                            DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+                    int bytesTotal = cursor.getInt(cursor.getColumnIndexOrThrow(
+                            DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        downloading = false;
+                    } else if (status == DownloadManager.STATUS_FAILED) {
+                        downloading = false;
+                        cancelledOrFailed = true;
+                    }
+
+                    if (bytesTotal > 0 && downloading) {
+                        final int progress = (int) ((bytesDownloaded * 100L) / bytesTotal);
+                        runOnUiThread(() -> {
+                            if (progressDialog != null && progressDialog.isShowing()) {
+                                progressDialog.setProgress(progress);
+                                double mb = bytesTotal / (1024.0 * 1024.0);
+                                progressDialog.setMessage(String.format(
+                                        Locale.getDefault(),
+                                        "Heruntergeladen: %.1f MB",
+                                        mb
+                                ));
+                            }
+                        });
+                    }
+                    cursor.close();
+                } else {
+                    downloading = false;
+                    cancelledOrFailed = true;
+                }
+
+                if (downloading) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            }
+
+            final boolean isCancelled = cancelledOrFailed;
+            runOnUiThread(() -> {
+                if (progressDialog != null && progressDialog.isShowing()) {
+                    try {
+                        progressDialog.dismiss();
+                    } catch (Exception ignored) {}
+                }
+                if (!isCancelled) {
+                    Toast.makeText(this, "Download abgeschlossen: " + displayFileName, Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        }).start();
+    }
+
+    private void updateProgress(int percent) {
+        runOnUiThread(() -> {
+            if (progressBar != null) {
+                progressBar.setProgress(percent);
+            }
+            if (progressPercent != null) {
+                progressPercent.setText(percent + "%");
+            }
+        });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+
+        setIntent(intent);
+
+
+        String extraUrl = intent.getStringExtra("url");
+        if (extraUrl != null && !extraUrl.trim().isEmpty()) {
+            webView.loadUrl(extraUrl.trim());
+            return;
+        }
+
+
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri uri = intent.getData();
+            if (uri != null) {
+                webView.loadUrl(uri.toString());
+            }
+        }
+    }
+
+
+    @Override
+    public void onContextMenuClosed(Menu menu) {
+        super.onContextMenuClosed(menu);
+        if (webView != null) {
+            webView.setFocusable(true);
+            webView.requestFocus();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.web_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        if (id == android.R.id.home) {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+            return true;
+
+        } else if (id == R.id.menu_copy) {
+            copySelectedText();
+            return true;
+        } else if (id == R.id.list_past) {
+            showClipboardPicker();
+            return true;
+        } else if (id == R.id.favorites) {
+            addCurrentPageToFavorites();
+            return true;
+        } else if (id == R.id.full) {
+            applyFullscreenFromPrefs();
+            return true;
+        } else if (id == R.id.option) {
+            Settings();
+            webView.loadUrl(webView.getUrl());
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private List<String> loadClipboard() {
+        List<String> list = new ArrayList<>();
+        try (Cursor c = EasyTvDb.get(this).getClipboardDesc()) {
+            int ix = c.getColumnIndexOrThrow("entry");
+            while (c.moveToNext()) list.add(c.getString(ix));
+        }
+        return list;
+    }
+
+    private void showClipboardDialog() {
+        List<String> items = loadClipboard();
+        String[] arr = items.toArray(new String[0]);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Wähle einen Eintrag")
+                .setItems(arr, (dialog, which) -> {
+                    String selectedText = items.get(which);
+                    if (inputText != null) {
+                        inputText.setText(selectedText);
+                        inputText.setSelection(selectedText.length());
+                    }
+                })
+                .show();
+    }
+
+    private void writeUrlToHistory(String url) {
+        if (url == null || url.trim().isEmpty()) return;
+
+        String title = webView != null ? webView.getTitle() : null;
+        String fallbackFavicon = "";
+
+        try {
+            Uri uri = Uri.parse(url);
+            String scheme = uri.getScheme() != null ? uri.getScheme() : "https";
+            String host = uri.getHost();
+            if (host != null) {
+                fallbackFavicon = scheme + "://" + host + "/favicon.ico";
+            }
+        } catch (Exception ignored) {}
+
+        final String finalFallback = fallbackFavicon;
+        final String finalTitle = title;
+        final String finalUrl = url;
+
+        executor.execute(() -> {
+            try {
+                EasyTvDb.get(this).addHistory(finalFallback, finalUrl, finalTitle);
+
+                String realFavicon = findRealFavicon(finalUrl, finalFallback);
+                if (realFavicon != null && !realFavicon.isEmpty() && !realFavicon.equals(finalFallback)) {
+                    EasyTvDb.get(this).updateHistoryFavicon(finalUrl, realFavicon);
+                }
+            } catch (Exception e) {
+                android.util.Log.w("EasyTV", "History/Favicon update failed: " + e);
+            }
+        });
+    }
+
+    private String findRealFavicon(String pageUrl, String fallbackUrl) {
+        try {
+            URL url = new URL(pageUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+            conn.connect();
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream())
+            );
+            String line;
+            while ((line = reader.readLine()) != null) {
+                int i = line.toLowerCase().indexOf("rel=\"icon\"");
+                if (i >= 0) {
+                    int hrefStart = line.toLowerCase().indexOf("href=", i);
+                    if (hrefStart >= 0) {
+                        int q1 = line.indexOf('"', hrefStart);
+                        int q2 = line.indexOf('"', q1 + 1);
+                        if (q1 > 0 && q2 > q1) {
+                            String found = line.substring(q1 + 1, q2);
+                            if (!found.startsWith("http")) {
+                                Uri base = Uri.parse(pageUrl);
+                                found = base.getScheme() + "://" + base.getHost() + found;
+                            }
+                            reader.close();
+                            conn.disconnect();
+                            return found;
+                        }
+                    }
+                }
+            }
+            reader.close();
+            conn.disconnect();
+        } catch (Exception ignored) {}
+        return fallbackUrl;
+    }
+
+    public void syncSettingsToSdcard() {
+        try {
+            File internal = new File(getFilesDir().getParent() + "/shared_prefs/settings.xml");
+
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File external = new File(downloadsDir, "EASYTV/shared_prefs/settings.xml");
+
+            if (!external.getParentFile().exists()) {
+                external.getParentFile().mkdirs();
+            }
+
+            try (InputStream in = new FileInputStream(internal);
+                 OutputStream out = new FileOutputStream(external)) {
+
+                byte[] buffer = new byte[4096];
+                int length;
+                while ((length = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, length);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupFireTVKeyboardControl() {
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
+        webView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                hideKeyboard();
+            }
+        });
+    }
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case 89:
+                if (event.getRepeatCount() == 0) {
+                    if (webView.canGoBack()) {
+                        webView.goBack();
+                    }
+                    return true;
+                } else if (event.getRepeatCount() > 0) {
+                    webView.pageUp(false);
+                    return true;
+                }
+                break;
+
+            case 90:
+                if (event.getRepeatCount() == 0) {
+                    if (webView.canGoForward()) {
+                        webView.goForward();
+                    }
+                    return true;
+                } else if (event.getRepeatCount() > 0) {
+                    webView.pageUp(true);
+                    return true;
+                }
+                break;
+
+            case 85:
+                if (event.getRepeatCount() == 0) {
+                    cursorLayout.toggleCursorVisibility();
+                    return true;
+                } else if (event.getRepeatCount() > 0) {
+                    pasteFromClipboard();
+                    return true;
+                }
+                break;
+
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+                if (webView.hasFocus()) {
+                    webView.evaluateJavascript(
+                            "(function() { " +
+                                    "var activeElem = document.activeElement; " +
+                                    "if (activeElem && activeElem.select) { " +
+                                    "   activeElem.select(); " +
+                                    "} else if (activeElem && activeElem.click) { " +
+                                    "   activeElem.click(); " +
+                                    "} })();",
+                            null
+                    );
+                    return true;
+                }
+                break;
+        }
+
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
+        }
+    }
+
+    private void scrollUp() {
+        scrollUpInWebView();
+    }
+
+    private void scrollDown() {
+        scrollDownInWebView();
+    }
+
+    void openSideMenu() {
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+        } else if (!drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.openDrawer(GravityCompat.START);
+        }
+    }
+
+    public void showSearchDialog() {
+
+        final EditText searchInput = new EditText(this);
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Wort Suchen");
+        dialog.setMessage("Gib das Wort ein, das du auf der Seite suchen möchtest:");
+        dialog.setView(searchInput);
+
+        dialog.setPositiveButton("Suchen", (dialog1, which) -> {
+            String searchText = searchInput.getText().toString().trim();
+            if (!searchText.isEmpty()) {
+                highlightText(searchText);
+            }
+        });
+
+        dialog.setNegativeButton("Abbrechen", null);
+        dialog.show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+
+        if (requestCode == FILE_CHOOSER_REQUEST_CODE && filePathCallback != null) {
+            Uri[] results = null;
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                String dataString = data.getDataString();
+                if (dataString != null) {
+                    results = new Uri[]{Uri.parse(dataString)};
+                } else if (data.getClipData() != null) {
+
+                    ClipData clipData = data.getClipData();
+                    results = new Uri[clipData.getItemCount()];
+                    for (int i = 0; i < clipData.getItemCount(); i++) {
+                        results[i] = clipData.getItemAt(i).getUri();
+                    }
+                } else if (data.getData() != null) {
+
+                    results = new Uri[]{data.getData()};
+                }
+            }
+
+
+            filePathCallback.onReceiveValue(results);
+            filePathCallback = null;
+            return;
+        }
+
+
+        if (requestCode == REQUEST_CODE_SAVE_FILE && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                downloadToUri(downloadUrl, uri);
+            }
+        }
+    }
+
+    private void downloadToUri(String urlString, Uri destinationUri) {
+
+        executor.execute(() -> {
+            try {
+                URL url = new URL(urlString);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+
+                int totalSize = connection.getContentLength();
+                int downloaded = 0;
+
+                try (InputStream input = connection.getInputStream();
+                     OutputStream output = getContentResolver().openOutputStream(destinationUri)) {
+
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+
+                    while ((bytesRead = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, bytesRead);
+                        downloaded += bytesRead;
+                        int progress = (int) ((downloaded / (float) totalSize) * 100);
+                        updateProgress(progress);
+                    }
+
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Download abgeschlossen", Toast.LENGTH_SHORT).show();
+                    });
+                }
+
+                connection.disconnect();
+            } catch (IOException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Fehler beim Download", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void highlightText(String searchText) {
+        String jsCode = "(function() {" +
+                "var bodyText = document.body.innerHTML;" +
+                "var searchText = '" + searchText + "';" +
+                "var highlighted = '<span style=\"background-color:yellow;\">' + searchText + '</span>';" +
+                "document.body.innerHTML = bodyText.split(searchText).join(highlighted);" +
+                "})();";
+
+        webView.evaluateJavascript(jsCode, null);
+    }
+
+    private static class WebAppInterface {
+        Context mContext;
+
+        WebAppInterface(Context c) {
+            mContext = c;
+        }
+
+        @JavascriptInterface
+        public void showSelectedText(String text) {
+
+            handleCopy(text);
+        }
+
+        @JavascriptInterface
+        public void onVideoDetected(String src) {
+            if (mContext instanceof WebActivity) {
+                ((WebActivity) mContext).onVideoDetected(src);
+            }
+        }
+
+        private void handleCopy(String text) {
+            if (text == null) return;
+            text = text.trim();
+            if (text.isEmpty()) return;
+
+
+            ClipboardManager clipboard = (ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                ClipData clip = ClipData.newPlainText("Copied Text", text);
+                clipboard.setPrimaryClip(clip);
+            }
+
+
+            try {
+                EasyTvDb.get(mContext).addClipboardEntry(text);
+            } catch (Exception e) {
+                android.util.Log.e("EasyTV", "Clipboard speichern fehlgeschlagen", e);
+            }
+
+
+            SharedPreferences prefs = mContext.getSharedPreferences("settings", Context.MODE_PRIVATE);
+            prefs.edit()
+                    .putString("email", text)
+                    .apply();
+
+
+            Toast.makeText(mContext, "Kopiert: " + text, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
+
+    public void copySelectedText() {
+
+        webView.evaluateJavascript(
+                "(function() { return window.getSelection().toString(); })();",
+                new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String selectedText) {
+
+                        if (selectedText != null && !selectedText.isEmpty()) {
+
+                            selectedText = selectedText.replace("\"", "");
+
+                            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                            ClipData clip = ClipData.newPlainText("Kopierter Text", selectedText);
+                            if (clipboard != null) {
+                                clipboard.setPrimaryClip(clip);
+                                try {
+                                    EasyTvDb.get(WebActivity.this).addClipboardEntry(selectedText);
+                                } catch (Exception e) {
+                                    android.util.Log.e("EasyTV", "Clipboard speichern fehlgeschlagen", e);
+                                }
+                                Toast.makeText(WebActivity.this,
+                                        "Text kopiert: " + selectedText,
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(WebActivity.this,
+                                    "Kein Text markiert",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
+    }
+
+    public void goBackInWebView() {
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+            Toast.makeText(this, "Eine Seite zurück im WebView", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Keine Seite mehr im WebView-Verlauf", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void scrollUpInWebView() {
+        if (webView != null) {
+            webView.scrollBy(0, -300);
+        }
+    }
+
+    public void scrollDownInWebView() {
+        if (webView != null) {
+            webView.scrollBy(0, 300);
+        }
+    }
+
+    public void goForwardInWebView() {
+        if (webView != null && webView.canGoForward()) {
+            webView.goForward();
+            Toast.makeText(this, "Eine Seite vor im WebView", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Keine weitere Seite im WebView-Verlauf", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    String pasteFromClipboard() {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null && clipboard.hasPrimaryClip()) {
+            ClipData clip = clipboard.getPrimaryClip();
+            if (clip != null && clip.getItemCount() > 0) {
+                ClipData.Item item = clip.getItemAt(0);
+                return item.getText().toString();
+            }
+        }
+
+        Toast.makeText(this, "Zwischenablage ist leer", Toast.LENGTH_SHORT).show();
+        return "";
+    }
+
+
+
+    private void showClipboardPicker() {
+        final ArrayList<Long> ids = new ArrayList<>();
+        final ArrayList<String> entries = new ArrayList<>();
+        try (Cursor c = EasyTvDb.get(this).getClipboardDesc()) {
+            int ixId = c.getColumnIndexOrThrow("id");
+            int ixEntry = c.getColumnIndexOrThrow("entry");
+            while (c.moveToNext()) {
+                ids.add(c.getLong(ixId));
+                entries.add(c.getString(ixEntry));
+            }
+        }
+        if (entries.isEmpty()) {
+            Toast.makeText(this, "Leer", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] arr = entries.toArray(new String[0]);
+        new AlertDialog.Builder(this)
+                .setTitle("Clipboard")
+                .setItems(arr, (d, which) -> {
+                    long selId = ids.get(which);
+                    String selText = arr[which];
+                    showClipboardActions(selId, selText);
+                })
+                .show();
+    }
+
+    private void showClipboardActions(long id, String text) {
+        String[] ops = {"PASTE", "DELETE", "DELETE ALL"};
+        new AlertDialog.Builder(this)
+                .setTitle("Aktion")
+                .setItems(ops, (d, w) -> {
+                    switch (w) {
+                        case 0:
+                            insertTextIntoWebViewOrUrlBar(text);
+                            break;
+                        case 1:
+                            EasyTvDb.get(this).deleteClipboardEntry(id);
+                            Toast.makeText(this, "Eintrag gelöscht", Toast.LENGTH_SHORT).show();
+                            break;
+                        case 2:
+                            new AlertDialog.Builder(this)
+                                    .setTitle("Alle löschen")
+                                    .setMessage("Gesamtes Clipboard leeren")
+                                    .setPositiveButton("Löschen", (d2, w2) -> {
+                                        EasyTvDb.get(this).clearClipboard();
+                                        Toast.makeText(this, "Clipboard geleert", Toast.LENGTH_SHORT).show();
+                                    })
+                                    .setNegativeButton("Abbrechen", null)
+                                    .show();
+                            break;
+                    }
+                })
+                .show();
+    }
+
+    private void insertTextIntoWebViewOrUrlBar(String text) {
+        String safe = JSONObject.quote(text);
+        String js =
+                "(function(t){" +
+                        "var a=document.activeElement;" +
+                        "if(a && /^(INPUT|TEXTAREA)$/i.test(a.tagName)){" +
+                        "a.value=t;return 'OK';}" +
+                        "return 'NO';" +
+                        "})(" + safe + ")";
+        webView.evaluateJavascript(js, v -> {
+            String res = jsonUnquote(v);
+            if (!"OK".equals(res)) {
+                pasteIntoUrlBar(text);
+            }
+        });
+    }
+
+    private void pasteIntoUrlBar(String text) {
+        EditText urlBar = findViewById(R.id.urlInput);
+        if (urlBar != null) {
+            urlBar.setText(text);
+            urlBar.setSelection(urlBar.getText().length());
+            urlBar.requestFocus();
+        } else {
+            Toast.makeText(this, "Keine URL-Leiste gefunden", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private static String jsonUnquote(String v) {
+        if (v == null) return null;
+        try {
+            return new JSONArray("[" + v + "]").getString(0);
+        } catch (Exception ignore) {
+            return v;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null) {
+            WebViewHelper.loadFromPrefsAndApply(this, webView);
+        }
+
+        closeIfExists(FavoritesList.class);
+        closeIfExists(HistoryList.class);
+    }
+
+    private void closeIfExists(Class<?> activityClass) {
+        try {
+            for (android.app.Activity activity : ActivityTracker.getRunningActivities()) {
+                if (activityClass.isInstance(activity) && !activity.isFinishing()) {
+                    activity.finish();
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void updateActionBar(String title, String url) {
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowCustomEnabled(true);
+
+            LinearLayout layout = new LinearLayout(WebActivity.this);
+            layout.setOrientation(LinearLayout.HORIZONTAL);
+            layout.setLayoutParams(new ActionBar.LayoutParams(
+                    ActionBar.LayoutParams.MATCH_PARENT,
+                    ActionBar.LayoutParams.WRAP_CONTENT
+            ));
+            layout.setPadding(10, 0, 10, 0);
+
+            goButton = createButton(R.drawable.ceh);
+            favoriteButton = createButton(R.drawable.ic_favorite);
+            helpButton = createButton(R.drawable.ic_help);
+            searchButton = createButton(R.drawable.ic_search);
+            downButton = createButton(R.drawable.ic_down);
+            upButton = createButton(R.drawable.ic_up);
+
+            urlInput = new EditText(WebActivity.this);
+            urlInput.setLayoutParams(new LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    1f
+            ));
+            urlInput.setText(webView.getUrl() != null ? webView.getUrl() : "https://");
+            urlInput.setSingleLine(true);
+            urlInput.setTextColor(Color.WHITE);
+            urlInput.setHintTextColor(Color.LTGRAY);
+            urlInput.setBackgroundColor(Color.TRANSPARENT);
+            urlInput.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
+            urlInput.setSelection(urlInput.getText().length());
+
+            layout.addView(urlInput);
+            layout.addView(goButton);
+            layout.addView(favoriteButton);
+            layout.addView(helpButton);
+            layout.addView(searchButton);
+            layout.addView(downButton);
+            layout.addView(upButton);
+
+            actionBar.setCustomView(layout);
+
+            setupButtonActions();
+        }
+    }
+
+    private ImageButton createButton(int drawableId) {
+        ImageButton button = new ImageButton(WebActivity.this);
+        button.setImageResource(drawableId);
+        button.setBackgroundColor(Color.TRANSPARENT);
+        button.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+        return button;
+    }
+
+    private void setupButtonActions() {
+
+        setupButtonFocus(goButton);
+        setupButtonFocus(favoriteButton);
+        setupButtonFocus(helpButton);
+        setupButtonFocus(searchButton);
+        setupButtonFocus(downButton);
+        setupButtonFocus(upButton);
+
+        goButton.setOnClickListener(v -> {
+            highlightButton(goButton);
+            String enteredUrl = urlInput.getText().toString().trim();
+            if (!enteredUrl.startsWith("http")) {
+                enteredUrl = "https://" + enteredUrl;
+            }
+            webView.loadUrl(enteredUrl);
+        });
+
+        favoriteButton.setOnClickListener(v -> {
+            highlightButton(favoriteButton);
+            addCurrentPageToFavorites();
+        });
+
+        helpButton.setOnClickListener(v -> {
+            highlightButton(helpButton);
+            InfoActivity();
+        });
+
+        searchButton.setOnClickListener(v -> {
+            highlightButton(searchButton);
+            showSearchDialog();
+        });
+
+        downButton.setOnClickListener(v -> {
+            highlightButton(downButton);
+            scrollDown();
+        });
+
+        upButton.setOnClickListener(v -> {
+            highlightButton(upButton);
+            scrollUp();
+        });
+    }
+
+    private void highlightButton(ImageButton activeButton) {
+
+        goButton.setBackgroundColor(Color.TRANSPARENT);
+        favoriteButton.setBackgroundColor(Color.TRANSPARENT);
+        helpButton.setBackgroundColor(Color.TRANSPARENT);
+        searchButton.setBackgroundColor(Color.TRANSPARENT);
+        downButton.setBackgroundColor(Color.TRANSPARENT);
+        upButton.setBackgroundColor(Color.TRANSPARENT);
+
+        activeButton.setBackgroundColor(Color.BLACK);
+    }
+
+    private void setupButtonFocus(ImageButton button) {
+        button.setBackgroundColor(Color.TRANSPARENT);
+
+        button.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                button.setBackgroundColor(Color.parseColor("#000000"));
+            } else {
+                button.setBackgroundColor(Color.TRANSPARENT);
+            }
+        });
+    }
+
+    @SuppressLint("ResourceType")
+    private void showPopup() {
+
+        LayoutInflater inflater = getLayoutInflater();
+
+        View popupView = inflater.inflate(R.menu.popup_layout, null);
+        inputText = popupView.findViewById(R.id.inputText);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.CustomDialogTheme);
+        builder.setView(popupView);
+        AlertDialog dialog = builder.create();
+
+        EditText inputTextLocal = popupView.findViewById(R.id.inputText);
+        Button submitButton = popupView.findViewById(R.id.submitButton);
+
+        submitButton.setOnClickListener(v -> {
+            String url1 = inputTextLocal.getText().toString();
+            Toast.makeText(getApplicationContext(), "Eingabe: " + url1 + " wird geöffnet", Toast.LENGTH_SHORT).show();
+
+            if (!url1.startsWith("http://") &&
+                    !url1.startsWith("https://") &&
+                    !url1.startsWith("view-source:https://") &&
+                    !url1.startsWith("file:///")) {
+
+                url1 = "https://" + url1;
+            }
+
+            webView.loadUrl(url1);
+            dialog.dismiss();
+        });
+
+        dialog.setOnKeyListener((dialogInterface, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_MENU) {
+                showClipboardDialog();
+                return true;
+            }
+            return false;
+        });
+
+        dialog.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
+        dialog.show();
+    }
+
+
+
+    public void addCurrentPageToFavorites() {
+        String url = webView.getUrl();
+        if (url == null || url.trim().isEmpty()) {
+            Toast.makeText(this, "Keine URL", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String title = webView.getTitle();
+        String faviconUrl = url + "/favicon.ico";
+
+        long row = EasyTvDb.get(this).insertFavoriteIfAbsent(faviconUrl, url, title);
+        Toast.makeText(this,
+                row == -1 ? "Favorit existiert" : "Favorit gespeichert",
+                Toast.LENGTH_SHORT).show();
+    }
+
+
+
+    private void applyFullscreenFromPrefs() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isFullscreenPref = prefs.getBoolean("fullscreen", false);
+
+        if (isFullscreenPref) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            );
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_VISIBLE
+            );
+        }
+    }
+
+    protected void Settings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
+    }
+
+    protected void Apk() {
+        Intent intent = new Intent(this, Apk.class);
+        startActivity(intent);
+    }
+
+    protected void DownloadList() {
+        Intent intent = new Intent(this, DownloadList.class);
+        startActivity(intent);
+    }
+
+    protected void FavoritesList() {
+        Intent intent = new Intent(this, FavoritesList.class);
+        startActivity(intent);
+    }
+
+    protected void HistoryList() {
+        Intent intent = new Intent(this, HistoryList.class);
+        startActivity(intent);
+    }
+
+    protected void InfoActivity() {
+        Intent intent = new Intent(this, InfoActivity.class);
+        startActivity(intent);
+    }
+
+    @SuppressLint("GestureBackNavigation")
+    @Override
+    public void onBackPressed() {
+
+        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return;
+        }
+
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+            Toast.makeText(this, "Zurück zur vorherigen Seite", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastBackPressTime < BACK_PRESS_INTERVAL) {
+            super.onBackPressed();
+        } else {
+            Toast.makeText(this, "Nochmals Zurück drücken zum Beenden", Toast.LENGTH_SHORT).show();
+            lastBackPressTime = currentTime;
+        }
+    }
+
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (keyCode == KEYCODE_BACK) {
+            DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START);
+                drawerLayout.hasFocus();
+            }
+            return true;
+        }
+        return super.onKeyLongPress(keyCode, event);
+    }
+
+    protected void startupdate() {
+        Intent intent = new Intent(this, UpdateActivity.class);
+        startActivity(intent);
+    }
+
+    protected void startMainActivity() {
+        finish();
+    }
+
+    private void restartActivity(String currentUrl) {
+        Intent intent = getIntent();
+        intent.putExtra("url", currentUrl);
+        finish();
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+        }
+    }
+}

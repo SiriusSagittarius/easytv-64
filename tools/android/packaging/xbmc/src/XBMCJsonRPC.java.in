@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -24,21 +24,21 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-import @APP_PACKAGE@.content.XBMCFileContentProvider;
-import @APP_PACKAGE@.model.Album;
-import @APP_PACKAGE@.model.File;
-import @APP_PACKAGE@.model.Media;
-import @APP_PACKAGE@.model.Movie;
-import @APP_PACKAGE@.model.MusicVideo;
-import @APP_PACKAGE@.model.Song;
-import @APP_PACKAGE@.model.TVEpisode;
-import @APP_PACKAGE@.model.TVShow;
+import app.easytv.org.content.XBMCFileContentProvider;
+import app.easytv.org.model.Album;
+import app.easytv.org.model.File;
+import app.easytv.org.model.Media;
+import app.easytv.org.model.Movie;
+import app.easytv.org.model.MusicVideo;
+import app.easytv.org.model.Song;
+import app.easytv.org.model.TVEpisode;
+import app.easytv.org.model.TVShow;
 
 public class XBMCJsonRPC
 {
   native String _requestJSON(String request);
 
-  public final static String APP_NAME = "@APP_NAME@ Search";
+  public final static String APP_NAME = "EasyTV Search";
   public final static String COLUMN_FULL_PATH = "COLUMN_FULL_PATH";
   public final static String COLUMN_BASE_PATH = "COLUMN_BASE_PATH";
   public final static String COLUMN_FILENAME = "COLUMN_FILENAME";
@@ -59,7 +59,7 @@ public class XBMCJsonRPC
 
   private final static int MAX_ITEMS = 20;
 
-  private static String TAG = "@APP_NAME@";
+  private static String TAG = "EasyTV";
 
   private String m_xbmc_web_url = "http://localhost:8080";
   private HashSet<Integer> mRecomendationIds = new HashSet<Integer>();

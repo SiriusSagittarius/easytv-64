@@ -1,4 +1,4 @@
-package @APP_PACKAGE@.interfaces;
+package app.easytv.org.interfaces;
 
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;

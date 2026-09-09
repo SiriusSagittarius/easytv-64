@@ -1,0 +1,34 @@
+<shortcuts>
+	<shortcut>
+		<defaultID />
+		<label>[B]URL ÖFFNEN[/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/service.png</thumb>
+		<action>runscript(skin.easytv,browser)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=lime]FAVORITEN[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/favourite.png</thumb>
+		<action>RunScript(plugin.autostart,webfavs)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=red]VERLAUF[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/playlist.png</thumb>
+		<action>RunScript(plugin.autostart,verlauf)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[COLOR=orange][B]MediaLinks[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>RunScript(plugin.autostart,internet)</action>
+		</shortcut>
+	</shortcuts>

@@ -1,0 +1,10 @@
+<shortcuts>
+	<shortcut>
+		<defaultID>1038</defaultID>
+		<label>[B]MUSIK-ADDONS[/B]</label>
+		<label2>item</label2>
+		<icon>special://skin/extras/icons/addon.png</icon>
+		<thumb />
+		<action>ActivateWindow(music,addons://sources/audio/,return)</action>
+		</shortcut>
+	</shortcuts>

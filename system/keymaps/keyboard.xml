@@ -173,14 +173,26 @@
   </global>
   <LoginScreen>
     <keyboard>
-      <end mod="ctrl">ShutDown()</end>
+      <backspace>ActivateWindow(ShutdownMenu)</backspace>
+      <backspace mod="longpress">runscript(skin.easytv,restart)</backspace>
     </keyboard>
   </LoginScreen>
+  <Splash>
+    <keyboard>
+        <backspace>ActivateWindow(ShutdownMenu)</backspace>
+        <backspace mod="longpress">runscript(skin.easytv,restart)</backspace>
+    </keyboard>
+  </Splash>
+  <Startup>
+    <keyboard>
+      <backspace>ActivateWindow(ShutdownMenu)</backspace>
+      <backspace mod="longpress">runscript(skin.easytv,restart)</backspace>
+    </keyboard>
+  </Startup>
   <Home>
     <keyboard>
-      <i>info</i>
-      <end mod="ctrl">ShutDown()</end>
       <backspace mod="longpress">ActivateWindow(ShutdownMenu)</backspace>
+      <menu>runscript(skin.easytv,xmenu)</menu>
     </keyboard>
   </Home>
   <VirtualKeyboard>
@@ -190,17 +202,23 @@
       <right>Right</right>
       <up>Up</up>
       <down>Down</down>
+      <key id="61636" mod="longpress">sendclick(315);runscript(plugin.autostart,copy)</key>
+      <key id="61637" mod="longpress">runscript(plugin.autostart,paste)</key>
+      <key id="61636">sendclick(305)</key>
+      <key id="61637">sendclick(306)</key>
       <return>Select</return>
       <enter>Select</enter>
       <backspace>Backspace</backspace>
+      <backspace mod="longpress">runscript(skin.easytv,tclose)</backspace>
       <browser_back>Backspace</browser_back>
       <browser_back mod="longpress">PreviousMenu</browser_back>
-      <play_pause mod="longpress">Enter</play_pause>
-      <browser_search>VoiceRecognizer</browser_search>
-      <menu>VoiceRecognizer</menu>
-      <return mod="longpress">VoiceRecognizer</return>
-      <enter mod="longpress">VoiceRecognizer</enter>
-      <play_pause>VoiceRecognizer</play_pause>
+      <play_pause mod="longpress">sendclick(32)</play_pause>
+      <browser_search></browser_search>
+      <menu>shift</menu>
+      <menu mod="longpress">sendclick(303)</menu>
+      <return mod="longpress"></return>
+      <enter mod="longpress"></enter>
+      <play_pause>sendclick(32)</play_pause>
     </keyboard>
   </VirtualKeyboard>
   <TVChannels>
@@ -486,8 +504,10 @@
       <right>StepForward</right>
       <left mod="longpress">Rewind</left>
       <right mod="longpress">FastForward</right>
-      <up>SkipNext</up>
-      <down>SkipPrevious</down>
+      <up mod="longpress">SkipNext</up>
+      <down mod="longpress">SkipPrevious</down>
+      <up>VolumeUp</up>
+      <down>VolumeDown</down>
       <o>PlayerProcessInfo</o>
       <l>LockPreset</l>
       <escape>FullScreen</escape>
@@ -688,10 +708,10 @@
   </NumericInput>
   <FullscreenLiveTV>
     <keyboard>
-      <left>StepBack</left>
-      <right>StepForward</right>
-      <up>Up</up>
-      <down>Down</down>
+      <left>ChannelUp</left>
+      <right>ChannelDown</right>
+      <up>VolumeUp</up>
+      <down>VolumeDown</down>
       <return>OSD</return>
       <enter>OSD</enter>
       <g>ActivateWindow(PVRChannelGuide)</g>

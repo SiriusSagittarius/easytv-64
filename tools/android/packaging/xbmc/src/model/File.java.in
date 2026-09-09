@@ -1,4 +1,4 @@
-package @APP_PACKAGE@.model;
+package app.easytv.org.model;
 
 /*
  * Copyright (C) 2017 The Android Open Source Project
@@ -16,7 +16,7 @@ package @APP_PACKAGE@.model;
 
 import android.database.Cursor;
 
-import @APP_PACKAGE@.content.XBMCFileContentProvider;
+import app.easytv.org.content.XBMCFileContentProvider;
 
 import java.io.Serializable;
 

@@ -1,0 +1,130 @@
+<shortcuts>
+	<shortcut>
+		<defaultID />
+		<label>[COLOR=lime][B]FORUM[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/thxtoken.png</thumb>
+		<action>runscript(skin.easytv,home)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[COLOR=darkblue][B]PINNWAND[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/wand.png</thumb>
+		<action>RunScript(plugin.autostart,webview,https://lucymc.de/login.php)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=lime]POSTFACH[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/subtitles.png</thumb>
+		<action>RunScript(plugin.autostart,post)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[COLOR=pink][B]SAUEREI[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/porn.png</thumb>
+		<action>RunScript(plugin.autostart,webview,https://sau.svenhaase.de)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=red]CREATE BACKUP[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/removabledisk.png</thumb>
+		<action>RunScript(skin.easytv,backup)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=magenta]INSTALL BUNDLE[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/service.png</thumb>
+		<action>RunScript(skin.easytv,install)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=red]CLIPBOARD[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/calendar.png</thumb>
+		<action>runscript(skin.easytv,clipboard)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=violet]UPLOADS[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/super.png</thumb>
+		<action>runscript(skin.easytv,uploads)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>24001</defaultID>
+		<label>[B]ADDONS[/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>special://skin/extras/icons/addon.png</icon>
+		<thumb>DefaultAddon.png</thumb>
+		<action>ActivateWindow(addonbrowser)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=yellow]SKIN[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/actor.png</thumb>
+		<action>ActivateWindow(SkinSettings)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>7</defaultID>
+		<label>[B]DATEIMANAGER[/B]</label>
+		<label2>Gemeinsamer Menüeintrag</label2>
+		<icon>special://skin/extras/icons/file.png</icon>
+		<thumb>special://skin/extras/icons/add.png</thumb>
+		<action>ActivateWindow(FileManager)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=lime]DNS CHECK[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/help.png</thumb>
+		<action>runscript(skin.easytv,dns)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B]FILESHARE[/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/satellite.png</thumb>
+		<action>RunScript(skin.easytv,ftp)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=orange]XMENU[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/file.png</thumb>
+		<action>runscript(skin.easytv,xmenu)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[COLOR=blue][B]TCLOUD[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/tg.png</thumb>
+		<action>runscript(skin.easytv,tcloud)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[COLOR=orange][B]EASY-TV DEVELOPER[/B][/COLOR]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/hase.png</thumb>
+		<action>RunScript(plugin.autostart,webview,https://svenhaase.de)</action>
+		</shortcut>
+	</shortcuts>

@@ -12,7 +12,7 @@
  * the License.
  */
 
-package @APP_PACKAGE@.channels;
+package app.easytv.org.channels;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,14 +30,14 @@ import android.os.Looper;
 import android.util.Log;
 import androidx.tvprovider.media.tv.TvContractCompat;
 
-import @APP_PACKAGE@.R;
-import @APP_PACKAGE@.XBMCJsonRPC;
-import @APP_PACKAGE@.XBMCURIUtils;
-import @APP_PACKAGE@.channels.model.Subscription;
-import @APP_PACKAGE@.channels.model.XBMCDatabase;
-import @APP_PACKAGE@.channels.util.TvUtil;
-import @APP_PACKAGE@.content.XBMCFileContentProvider;
-import @APP_PACKAGE@.model.File;
+import app.easytv.org.R;
+import app.easytv.org.XBMCJsonRPC;
+import app.easytv.org.XBMCURIUtils;
+import app.easytv.org.channels.model.Subscription;
+import app.easytv.org.channels.model.XBMCDatabase;
+import app.easytv.org.channels.util.TvUtil;
+import app.easytv.org.content.XBMCFileContentProvider;
+import app.easytv.org.model.File;
 
 /**
  * A service that will populate the TV provider with channels that every user should have. Once a
@@ -46,7 +46,7 @@ import @APP_PACKAGE@.model.File;
 public class SyncChannelJobService extends JobService
 {
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   private SyncChannelTask mSyncChannelTask;
 

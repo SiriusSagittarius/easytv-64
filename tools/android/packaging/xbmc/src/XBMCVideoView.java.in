@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.graphics.PixelFormat;
 import android.util.Log;
@@ -20,7 +20,7 @@ public class XBMCVideoView extends SurfaceView implements
 
   native void _surfaceDestroyed(SurfaceHolder holder);
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   public boolean mIsCreated = false;
   private RelativeLayout mVideoLayout = null;

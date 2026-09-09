@@ -1012,12 +1012,12 @@
         </setting>
         <setting id="filelists.showhidden" type="boolean" label="21330" help="36127">
           <level>2</level>
-          <default>false</default>
+          <default>true</default>
           <control type="toggle" />
         </setting>
         <setting id="filelists.allowfiledeletion" type="boolean" label="14071" help="36125">
           <level>2</level>
-          <default>false</default>
+          <default>true</default>
           <dependencies>
             <dependency type="enable">
               <or>
@@ -2121,7 +2121,7 @@
       <group id="1" label="13000">
         <setting id="services.devicename" type="string" label="1271" help="36321">
           <level>0</level>
-          <default>Kodi</default>
+          <default>EasyTV</default>
           <control type="edit" format="string" />
         </setting>
       </group>
@@ -2151,7 +2151,7 @@
         <requirement>HAS_WEB_SERVER</requirement>
         <setting id="services.webserver" type="boolean" label="263" help="36328">
           <level>1</level>
-          <default>false</default>
+          <default>true</default>
           <control type="toggle" />
         </setting>
         <setting id="services.webserverport" type="integer" parent="services.webserver" label="730" help="36329">
@@ -2169,12 +2169,12 @@
         </setting>
         <setting id="services.webserverauthentication" parent="services.webserver" type="boolean" label="1052" help="1053">
           <level>1</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle" />
         </setting>
         <setting id="services.webserverusername" type="string" parent="services.webserver" label="1048" help="36330">
           <level>1</level>
-          <default>kodi</default>
+          <default>easytv</default>
           <updates>
             <update type="change" />
           </updates>
@@ -2182,7 +2182,7 @@
         </setting>
         <setting id="services.webserverpassword" type="string" parent="services.webserver" label="733" help="36331">
           <level>1</level>
-          <default></default>
+          <default>1234</default>
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
@@ -2575,7 +2575,7 @@
         </setting>
         <setting id="weather.addon" type="addon" label="24029" help="36318">
           <level>0</level>
-          <default></default>
+          <default>weather.gismeteo</default>
           <constraints>
             <addontype>xbmc.python.weather</addontype>
             <allowempty>true</allowempty>
@@ -3629,12 +3629,12 @@
         </setting>
         <setting id="addons.unknownsources" type="boolean" label="36615" help="36616">
           <level>0</level>
-          <default>false</default>
+          <default>true</default>
           <control type="toggle" />
         </setting>
         <setting id="addons.updatemode" type="integer" parent="addons.unknownsources" label="36422" help="36423">
           <level>1</level>
-          <default>0</default>
+          <default>1</default>
           <constraints>
             <options>
               <option label="36437">0</option> <!-- OFFICIAL_ONLY -->
@@ -3873,7 +3873,7 @@
       <group id="1" label="24997">
         <setting id="lookandfeel.skin" type="addon" label="166" help="36103">
           <level>0</level>
-          <default>skin.estuary</default>
+          <default>skin.easytv</default>
           <constraints>
             <addontype>xbmc.gui.skin</addontype>
           </constraints>
@@ -3901,7 +3901,7 @@
         </setting>
         <setting id="lookandfeel.skincolors" type="string" parent="lookandfeel.skin" label="14078" help="36106">
           <level>1</level>
-          <default>SKINDEFAULT</default>
+          <default>Aqua</default>
           <constraints>
             <options>skincolors</options>
           </constraints>
@@ -3912,7 +3912,7 @@
         </setting>
         <setting id="lookandfeel.font" type="string" parent="lookandfeel.skin" label="13303" help="36107">
           <level>1</level>
-          <default>Default</default>
+          <default>Arial</default>
           <constraints>
             <options>skinfonts</options>
           </constraints>
@@ -3950,8 +3950,8 @@
           <control type="spinner" format="string" />
         </setting>
         <setting id="lookandfeel.enablerssfeeds" type="boolean" label="13305" help="36111">
-          <level>0</level>
-          <default>false</default>
+          <level>4</level>
+          <default>true</default>
           <control type="toggle" />
         </setting>
         <setting id="lookandfeel.rssedit" type="string" parent="lookandfeel.enablerssfeeds" label="21450" help="36112">
@@ -3973,7 +3973,7 @@
       <group id="1" label="14218">
         <setting id="locale.language" type="addon" label="248" help="36114">
           <level>0</level>
-          <default>resource.language.en_gb</default>
+          <default>resource.language.de_de</default>
           <constraints>
             <addontype>kodi.resource.language</addontype>
           </constraints>
@@ -3994,7 +3994,7 @@
         </setting>
         <setting id="locale.keyboardlayouts" type="list[string]" label="310" help="36432">
           <level>0</level>
-          <default>English QWERTY</default>
+          <default>German QWERTZ</default>
           <constraints>
             <options>keyboardlayouts</options>
             <delimiter>|</delimiter>
@@ -4007,13 +4007,13 @@
         </setting>
         <setting id="locale.activekeyboardlayout" type="string" label="0" help="0">
           <level>4</level>
-          <default>English QWERTY</default>
+          <default>German QWERTZ</default>
         </setting>
       </group>
       <group id="2" label="14270">
         <setting id="locale.country" type="string" label="14271" help="36115">
           <level>0</level>
-          <default>USA (12h)</default>
+          <default>EUR (24h)</default>
           <constraints>
             <options>regions</options>
           </constraints>

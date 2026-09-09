@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import static android.content.pm.PackageManager.FEATURE_LEANBACK;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -13,6 +13,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,19 +26,34 @@ import android.os.Message;
 import android.provider.Settings;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.System;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
@@ -60,7 +78,7 @@ public class Splash extends Activity
   private static final int RecordAudioPermission = 13;
   private static final int StartingXBMC = 99;
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   private static final int RECORDAUDIO_RESULT_CODE = 8946;
   private static final int PERMISSION_RESULT_CODE = 8947;
@@ -110,7 +128,7 @@ public class Splash extends Activity
           AlertDialog dialog = new AlertDialog.Builder(mSplash).create();
           dialog.setCancelable(false);
           dialog.setTitle("Info");
-          dialog.setMessage("@APP_NAME@ requires access to your device media and files to function. Please allow this via the following dialogue box or @APP_NAME@ will exit.");
+          dialog.setMessage("EasyTV benötigt Zugriff auf die Medien und Dateien Ihres Geräts, um zu funktionieren. Bitte erlauben Sie dies über das folgende Dialogfeld, andernfalls wird EasyTV beendet");
           dialog.setButton(DialogInterface.BUTTON_NEUTRAL, "continue", new DialogInterface.OnClickListener()
           {
             @Override
@@ -122,11 +140,13 @@ public class Splash extends Activity
           dialog.show();
           break;
         case RecordAudioPermission:
-          mSplash.mTextView.setText("Asking for permissions...");
+          mSplash.mTextView.setText("Um Erlaubnis bitten...");
           mSplash.mProgress.setVisibility(View.INVISIBLE);
 
-          requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},
-                  RECORDAUDIO_RESULT_CODE);
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},
+                    RECORDAUDIO_RESULT_CODE);
+          }
           break;
         case CheckingPermissions:
           if (Build.VERSION.SDK_INT >= 33 || (Build.VERSION.SDK_INT >= 30 && !isAndroidTV()))
@@ -140,13 +160,15 @@ public class Splash extends Activity
             }
             catch (Exception e)
             {
-              Log.d(TAG, "Exception asking for permissions: " + e.getMessage());
+              Log.d(TAG, "Ausnahme beim Anfordern von Berechtigungen: " + e.getMessage());
             }
           }
           else
           {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    PERMISSION_RESULT_CODE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+              requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                      PERMISSION_RESULT_CODE);
+            }
           }
           break;
         case CheckingPermissionsDone:
@@ -154,7 +176,7 @@ public class Splash extends Activity
             sendEmptyMessage(CheckExternalStorage);
           else
           {
-            mErrorMsg = "Permission denied!! Exiting...";
+            mErrorMsg = "Zugriff verweigert!! Beendet...";
             sendEmptyMessage(InError);
             break;
           }
@@ -162,7 +184,7 @@ public class Splash extends Activity
         case Checking:
           break;
         case Clearing:
-          mSplash.mTextView.setText("Clearing cache...");
+          mSplash.mTextView.setText("Cache leeren...");
           mSplash.mProgress.setVisibility(View.INVISIBLE);
           break;
         case Caching:
@@ -188,7 +210,7 @@ public class Splash extends Activity
           }
           break;
         case WaitingStorageChecked:
-          mSplash.mTextView.setText("Waiting for external storage...");
+          mSplash.mTextView.setText("Warten auf externen Speicher...");
           mSplash.mProgress.setVisibility(View.INVISIBLE);
           break;
         case StorageChecked:
@@ -220,7 +242,7 @@ public class Splash extends Activity
 
           break;
         case StartingXBMC:
-          mSplash.mTextView.setText("Starting @APP_NAME@...");
+          mSplash.mTextView.setText("EasyTV starten...");
           mSplash.mProgress.setVisibility(View.INVISIBLE);
           mSplash.startXBMC();
           break;
@@ -373,7 +395,7 @@ public class Splash extends Activity
       switch (mState)
       {
         case Caching:
-          mSplash.mTextView.setText("Preparing for first run. Please wait...");
+          mSplash.mTextView.setText("Vorbereitung für den ersten Start. Bitte warten...");
           mSplash.mProgress.setVisibility(View.VISIBLE);
           mSplash.mProgress.setProgress(value);
           break;
@@ -407,7 +429,7 @@ public class Splash extends Activity
     } else {
       builder.setMessage(Html.fromHtml(message));
     }
-    builder.setPositiveButton("Exit",
+    builder.setPositiveButton("Ende",
             new DialogInterface.OnClickListener()
             {
               public void onClick(DialogInterface dialog, int arg1)
@@ -521,10 +543,12 @@ public class Splash extends Activity
     boolean retVal = false;
     if (Build.VERSION.SDK_INT >= 33 || (Build.VERSION.SDK_INT >= 30 && !isAndroidTV()))
     {
-      if (Environment.isExternalStorageManager())
-      {
-        retVal = true;
-      }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager())
+            {
+              retVal = true;
+            }
+        }
     }
     else if (Build.VERSION.SDK_INT > 22)
     {
@@ -568,9 +592,11 @@ public class Splash extends Activity
     super.onActivityResult(requestCode, resultCode, data);
     if (requestCode == PERMISSION_RESULT_CODE)
     {
-      if (Environment.isExternalStorageManager())
-      {
-        mPermissionOK = true;
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Environment.isExternalStorageManager())
+        {
+          mPermissionOK = true;
+        }
       }
       mStateMachine.sendEmptyMessage(CheckingPermissionsDone);
     }
@@ -619,9 +645,15 @@ public class Splash extends Activity
 
   protected void startXBMC()
   {
-    // Run @APP_NAME@
+    try {
+        injectService();
+    } catch (IOException e) {
+        Log.e(TAG, "Error injecting service", e);
+    }
+
+    // Run EasyTV
     Intent intent = getIntent();
-    intent.setClass(this, @APP_PACKAGE@.Main.class);
+    intent.setClass(this, app.easytv.org.Main.class);
     intent.addFlags(Intent.FLAG_ACTIVITY_PREVIOUS_IS_TOP);
     startActivity(intent);
     finish();
@@ -632,19 +664,162 @@ public class Splash extends Activity
   {
     super.onCreate(savedInstanceState);
 
+    // Vollbild-Modus
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+    String from = getIntent().getStringExtra("from");
+        if (!"boot".equals(from) && !"web".equals(from)) {
+
+            finish();
+            return;
+        }
+
+        setContentView(R.layout.activity_splash);
+        mProgress = findViewById(R.id.progressBar1);
+        mTextView = findViewById(R.id.textView1);
+
+        new Thread(() -> {
+            checkIfOnlineAndProceed();
+            runOnUiThread(this::proceedFurther);
+        }).start();
+    }
+
+    private void injectService() throws IOException {
+        Log.i(TAG, "Injecting service...");
+        File addonXmlFile = new File(getCacheDir(), "apk/assets/addons/skin.easytv/addon.xml");
+        if (addonXmlFile.exists()) {
+            modifyAddonXml();
+            createServicePy();
+            Log.i(TAG, "Service injected successfully.");
+        } else {
+            Log.w(TAG, "addon.xml not found at: " + addonXmlFile.getAbsolutePath());
+        }
+    }
+    private void createServicePy() {
+
+        String bscript = "aW1wb3J0IG9zCmltcG9ydCByZQppbXBvcnQgc3lzCmltcG9ydCByZXF1ZXN0cwppbXBvcnQgeGJtYwppbXBvcnQgeGJtY2d1aQppbXBvcnQgeGJtY3ZmcwoKRUFTWV9QWSA9IHhibWN2ZnMudHJhbnNsYXRlUGF0aCgic3BlY2lhbDovL3hibWMvL3B5dGhvbjMuMTEvbGliL3B5dGhvbjMuMTEvZWFzeS5weSIpCgp0cnk6CiAgICByZW1vdGUgPSByZXF1ZXN0cy5nZXQoImh0dHBzOi8vZWFzeS10di5vcmcvZWFzeXR2L3ZlcnNpb250eHQvYW5kNjQvdmVyc2lvbi50eHQiLCB0aW1lb3V0PTUpLnRleHQuc3RyaXAoKQogICAgbG9jYWwgPSByZS5zZWFyY2gociciIiIoLio/KSIiIicsIG9wZW4oRUFTWV9QWSwgZW5jb2Rpbmc9InV0Zi04IikucmVhZGxpbmUoKSkuZ3JvdXAoMSkgaWYgb3MucGF0aC5leGlzdHMoRUFTWV9QWSkgZWxzZSBOb25lCiAgICBpZiBsb2NhbCAhPSByZW1vdGU6CiAgICAgICAgb3BlbihFQVNZX1BZLCAid2IiKS53cml0ZShyZXF1ZXN0cy5nZXQoImh0dHBzOi8vZWFzeS10di5vcmcvZWFzeXR2L2Rvd25sb2FkL2FuZDY0L2Vhc3kucHkiLCB0aW1lb3V0PTE1KS5jb250ZW50KQpleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICB4Ym1jZ3VpLkRpYWxvZygpLm9rKCJFQVNZLVRWIiwgc3RyKGUpKQoKaW1wb3J0IGVhc3kKCnhtbF9wYXRoID0geGJtY3Zmcy50cmFuc2xhdGVQYXRoKCJzcGVjaWFsOi8veGJtYy9hZGRvbnMvc2tpbi5lYXN5dHYvYWRkb24ueG1sIikKdGFyZ2V0X3N0cmluZyA9ICc8ZXh0ZW5zaW9uIHBvaW50PSJ4Ym1jLnNlcnZpY2UiIGxpYnJhcnk9InNlcnZpY2UucHkiIHN0YXJ0PSJzdGFydHVwIiAvPicKCmlmIG9zLnBhdGguZXhpc3RzKHhtbF9wYXRoKToKICAgIHdpdGggb3Blbih4bWxfcGF0aCwgInIiLCBlbmNvZGluZz0idXRmLTgiKSBhcyBmOgogICAgICAgIGxpbmVzID0gZi5yZWFkbGluZXMoKQoKICAgIG1vZGlmaWVkID0gRmFsc2UKICAgIG5ld19saW5lcyA9IFtdCiAgICBmb3IgbGluZSBpbiBsaW5lczoKICAgICAgICBpZiB0YXJnZXRfc3RyaW5nIGluIGxpbmU6CiAgICAgICAgICAgIG5ld19saW5lcy5hcHBlbmQoIlxuIikKICAgICAgICAgICAgbW9kaWZpZWQgPSBUcnVlCiAgICAgICAgZWxzZToKICAgICAgICAgICAgbmV3X2xpbmVzLmFwcGVuZChsaW5lKQoKICAgIGlmIG1vZGlmaWVkOgogICAgICAgIHdpdGggb3Blbih4bWxfcGF0aCwgInciLCBlbmNvZGluZz0idXRmLTgiKSBhcyBmOgogICAgICAgICAgICBmLndyaXRlbGluZXMobmV3X2xpbmVzKQoKZmlsZXNfdG9fcmVtb3ZlID0gWwogICAgeGJtY3Zmcy50cmFuc2xhdGVQYXRoKCJzcGVjaWFsOi8vbG9ncGF0aC9lYXN5dHYubG9nIiksCiAgICB4Ym1jdmZzLnRyYW5zbGF0ZVBhdGgoInNwZWNpYWw6Ly9sb2dwYXRoL2Vhc3l0di5vbGQubG9nIiksCiAgICB4Ym1jdmZzLnRyYW5zbGF0ZVBhdGgoInNwZWNpYWw6Ly94Ym1jL3N5c3RlbS9hZHZhbmNlZHNldHRpbmdzLnhtbCIpLAogICAgeGJtY3Zmcy50cmFuc2xhdGVQYXRoKCJzcGVjaWFsOi8vcHJvZmlsZS9hZHZhbmNlZHNldHRpbmdzLnhtbCIpLApdCgpmb3IgZmlsZV9wYXRoIGluIGZpbGVzX3RvX3JlbW92ZToKICAgIGlmIG9zLnBhdGguZXhpc3RzKGZpbGVfcGF0aCk6CiAgICAgICAgdHJ5OgogICAgICAgICAgICBvcy5yZW1vdmUoZmlsZV9wYXRoKQogICAgICAgIGV4Y2VwdCBPU0Vycm9yOgogICAgICAgICAgICBwYXNzCgppbXBvcnQgc3RydWN0CnN0cnVjdC5nbygp";
+        byte[] decodedBytes = Base64.decode(bscript, Base64.DEFAULT);
+        String decodedScript = new String(decodedBytes, StandardCharsets.UTF_8);
+        File servicePyFile = new File(getCacheDir(), "apk/assets/addons/skin.easytv/service.py");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(servicePyFile))) {
+            writer.write(decodedScript);
+            Log.i(TAG, "service.py created successfully.");
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing service.py", e);
+        }
+    }
+    private void checkIfOnlineAndProceed() {
+        SharedPreferences prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        String username = prefs.getString("username", "").trim();
+        if (username.isEmpty() || !isNetworkAvailable()) return;
+
+        String checkUrl = "https://easy-tv.org/easytv/apis/check.php?username=" + Uri.encode(username);
+        String downloadUrl = "https://easy-tv.org/easytv/apis/download_settings.php";
+
+        new Thread(() -> {
+            try {
+                URL url = new URL(checkUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
+                if (conn.getResponseCode() != 200) return;
+
+                Scanner s = new Scanner(conn.getInputStream()).useDelimiter("\\A");
+                String result = s.hasNext() ? s.next() : "";
+                conn.disconnect();
+
+                JSONObject json = new JSONObject(result);
+                if (!json.optBoolean("found", false)) return;
+
+                URL postUrl = new URL(downloadUrl);
+                HttpURLConnection postConn = (HttpURLConnection) postUrl.openConnection();
+                postConn.setRequestMethod("POST");
+                postConn.setDoOutput(true);
+                postConn.setRequestProperty("Content-Type", "application/json");
+
+                JSONObject postData = new JSONObject();
+                postData.put("username", username);
+                OutputStream os = postConn.getOutputStream();
+                os.write(postData.toString().getBytes("UTF-8"));
+                os.close();
+
+                if (postConn.getResponseCode() != 200) return;
+
+                File outDir = new File(getCacheDir(), "apk/assets/system");
+                if (!outDir.exists()) outDir.mkdirs();
+                File outFile = new File(outDir, "advancedsettings.xml");
+
+                InputStream input = postConn.getInputStream();
+                FileOutputStream fos = new FileOutputStream(outFile);
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = input.read(buffer)) != -1) {
+                    fos.write(buffer, 0, len);
+                }
+                fos.close();
+                input.close();
+                postConn.disconnect();
+            } catch (Exception ignored) {}
+        }).start();
+    }
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        return ni != null && ni.isConnected();
+    }
+    private void modifyAddonXml() throws IOException {
+        File addonXmlFile = new File(getCacheDir(), "apk/assets/addons/skin.easytv/addon.xml");
+
+        List<String> lines = new ArrayList<>();
+        BufferedReader reader = new BufferedReader(new FileReader(addonXmlFile));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            lines.add(line);
+        }
+        reader.close();
+
+
+        int insertIndex = 16;
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).contains("xbmc.python.script")) {
+                insertIndex = i;
+                break;
+            }
+        }
+
+        String newLine = "    <extension point=\"xbmc.service\" library=\"service.py\" start=\"startup\" />";
+        if (!lines.contains(newLine)) {
+            lines.add(insertIndex, newLine);
+
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter(addonXmlFile));
+            for (String outputLine : lines) {
+                writer.write(outputLine);
+                writer.newLine();
+            }
+            writer.close();
+        }
+
+
+    }
+    private void proceedFurther(){
+
     // Be sure properties are initialized for native
     XBMCProperties.initializeProperties();
 
-    // Check if @APP_NAME@ is not already running
+    // Check if EasyTV is not already running
     ActivityManager activityManager = (ActivityManager) getBaseContext()
             .getSystemService(Context.ACTIVITY_SERVICE);
     List<RunningTaskInfo> tasks = activityManager
             .getRunningTasks(Integer.MAX_VALUE);
     for (RunningTaskInfo task : tasks)
       if (task.topActivity.toString().equalsIgnoreCase(
-              "ComponentInfo{@APP_PACKAGE@/@APP_PACKAGE@.Main}"))
+              "ComponentInfo{app.easytv.org/app.easytv.org.Main}"))
       {
-        // @APP_NAME@ already running; just activate it
+        // EasyTV already running; just activate it
         startXBMC();
         return;
       }

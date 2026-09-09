@@ -1,0 +1,61 @@
+package app.easytv.org.sec;
+
+import android.os.Build;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
+import android.util.Base64;
+
+import java.security.KeyStore;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+
+public final class CryptoHelper {
+    private static final String KS = "AndroidKeyStore";
+    private static final String ALIAS = "EasyTV_AES_GCM";
+    private static final String TFM = "AES/GCM/NoPadding";
+
+    public static String encrypt(String plain) throws Exception {
+        if (plain == null) return null;
+        SecretKey key = getOrCreateKey();
+        Cipher c = Cipher.getInstance(TFM);
+        c.init(Cipher.ENCRYPT_MODE, key);
+        byte[] iv = c.getIV();
+        byte[] ct = c.doFinal(plain.getBytes("UTF-8"));
+        String ivB64 = Base64.encodeToString(iv, Base64.NO_WRAP);
+        String ctB64 = Base64.encodeToString(ct, Base64.NO_WRAP);
+        return ivB64 + ":" + ctB64;
+    }
+
+    public static String decrypt(String enc) throws Exception {
+        if (enc == null) return null;
+        String[] parts = enc.split(":", 2);
+        if (parts.length != 2) return null;
+        byte[] iv = Base64.decode(parts[0], Base64.NO_WRAP);
+        byte[] ct = Base64.decode(parts[1], Base64.NO_WRAP);
+        SecretKey key = getOrCreateKey();
+        Cipher c = Cipher.getInstance(TFM);
+        c.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(128, iv));
+        byte[] pt = c.doFinal(ct);
+        return new String(pt, "UTF-8");
+    }
+
+    private static SecretKey getOrCreateKey() throws Exception {
+        KeyStore ks = KeyStore.getInstance(KS);
+        ks.load(null);
+        if (!ks.containsAlias(ALIAS)) {
+            KeyGenerator kg = KeyGenerator.getInstance(
+                    KeyProperties.KEY_ALGORITHM_AES, KS);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                kg.init(new KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT).setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).setRandomizedEncryptionRequired(true).build());
+            }
+            kg.generateKey();
+        }
+        KeyStore.SecretKeyEntry e = (KeyStore.SecretKeyEntry) ks.getEntry(ALIAS, null);
+        return e.getSecretKey();
+    }
+
+    private CryptoHelper() {}
+}

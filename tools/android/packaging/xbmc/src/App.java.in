@@ -1,0 +1,13 @@
+package app.easytv.org;
+
+import android.app.Application;
+import app.easytv.org.util.ActivityTracker;
+
+public class App extends Application {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        registerActivityLifecycleCallbacks(new ActivityTracker());
+    }
+}

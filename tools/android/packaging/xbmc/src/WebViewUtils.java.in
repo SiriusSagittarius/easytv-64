@@ -1,0 +1,94 @@
+package app.easytv.org;
+
+import android.webkit.WebView;
+
+public class WebViewUtils {
+
+    public static void removeAds(WebView view) {
+        String js = "javascript:(function() {" +
+                "try {" +
+                "  var selectors = [" +
+                "    '.popup', '.modal', '#ad', '.ads', '.advertisement'," +
+                "    '.overlay', '#cookie-banner', '[aria-label*=\"Cookies\"]'," +
+                "    '[class*=\"popup\"]', '[id*=\"popup\"]', '[id*=\"cookie\"]'," +
+                "    '.videoAdUi', '.ytp-ad-module', '.vjs-overlay-ad'," +
+                "    '.jw-overlay', '.jwplayer-ads', '.jw-ad', '.vjs-ad-overlay'" +
+                "  ];" +
+                "  for (var i = 0; i < selectors.length; i++) {" +
+                "    var elements = document.querySelectorAll(selectors[i]);" +
+                "    for (var j = 0; j < elements.length; j++) {" +
+                "      elements[j].remove();" +
+                "    }" +
+                "  }" +
+                "  var closeButtons = document.querySelectorAll(" +
+                "    '[class*=\"close\"], [class*=\"Close\"], [id*=\"close\"], button[aria-label=\"Schließen\"]'" +
+                "  );" +
+                "  for (var k = 0; k < closeButtons.length; k++) {" +
+                "    if (closeButtons[k].offsetParent !== null) closeButtons[k].click();" +
+                "  }" +
+                "  var continueButtons = document.querySelectorAll('button, a');" +
+                "  for (var m = 0; m < continueButtons.length; m++) {" +
+                "    var text = continueButtons[m].innerText || '';" +
+                "    if (text.match(/(weiter|continue|watch now|skip)/i)) {" +
+                "      continueButtons[m].click();" +
+                "    }" +
+                "  }" +
+                "} catch(e) { console.log('AdBlock-Fehler:', e); }" +
+                "})();";
+
+        view.evaluateJavascript(js, null);
+    }
+
+    public static void autoAcceptCookies(WebView view) {
+        String js = "javascript:(function() {" +
+                "try {" +
+                "  const selectors = [" +
+                "    '[id*=\"accept\"]'," +
+                "    '[class*=\"accept\"]'," +
+                "    '[id*=\"consent\"]'," +
+                "    '[class*=\"consent\"]'," +
+                "    '[id*=\"cookie\"]'," +
+                "    '[class*=\"cookie\"]'," +
+                "    '[id*=\"agree\"]'," +
+                "    '[class*=\"agree\"]'," +
+                "    'button[aria-label*=\"akzeptieren\"]'," +
+                "    '*:contains(\"Alle akzeptieren\")'," +
+                "    '*:contains(\"Zustimmen\")'" +
+                "  ];" +
+                "  let clicked = false;" +
+                "  for (let i = 0; i < selectors.length; i++) {" +
+                "    const elements = document.querySelectorAll(selectors[i]);" +
+                "    for (let j = 0; j < elements.length; j++) {" +
+                "      const el = elements[j];" +
+                "      if (el.offsetParent !== null && typeof el.click === 'function') {" +
+                "        el.click();" +
+                "        console.log(\"Cookie-Banner akzeptiert:\", selectors[i]);" +
+                "        clicked = true;" +
+                "        break;" +
+                "      }" +
+                "    }" +
+                "    if (clicked) break;" +
+                "  }" +
+                "  if (!clicked) {" +
+                "    console.log(\"Kein akzeptierbarer Cookie-Button gefunden.\");" +
+                "  }" +
+                "} catch(e) { console.log('Cookie-Akzeptanz-Fehler:', e); }" +
+                "})();";
+
+        view.evaluateJavascript(js, null);
+    }
+
+    public static void blockClickHijacking(WebView view) {
+        String js = "javascript:(function() {" +
+                "var links = document.querySelectorAll('a[target=\"_blank\"]');" +
+                "for (var i = 0; i < links.length; i++) {" +
+                "  links[i].addEventListener('click', function(e) {" +
+                "    e.preventDefault();" +
+                "    e.stopPropagation();" +
+                "  }, true);" +
+                "}" +
+                "})();";
+
+        view.evaluateJavascript(js, null);
+    }
+}

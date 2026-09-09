@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<defaultcontrol>9000</defaultcontrol>
+	<include>Animation.Dialog</include>
+	<coordinates>
+		<system>1</system>
+		<left>0</left>
+		<top>0</top>
+	</coordinates>
+	<controls>
+		<control type="image">
+			<include>FullscreenDimensions</include>
+			<texture>$VAR[CommonBackgroundOverlay]</texture>
+			<colordiffuse>$VAR[ColorBackgroundVar]</colordiffuse>
+		</control>
+		<control type="grouplist" id="90300">
+			<left>705</left>
+			<top>0</top>
+			<width>510</width>
+			<height>1080</height>
+			<onleft>90300</onleft>
+			<onright>90300</onright>
+			<onup>90300</onup>
+			<ondown>90300</ondown>
+			<itemgap>0</itemgap>
+			<align>center</align>
+			<control type="image" id="90301">
+				<description>background image</description>
+				<width>510</width>
+				<height>30</height>
+				<texture border="16,16,16,0">button_border.png</texture>
+				<colordiffuse>$VAR[ColorDialogVar]</colordiffuse>
+			</control>
+			<control type="image" id="90302">
+				<description>Exit button</description>
+				<width>510</width>
+				<height>60</height>
+				<align>left</align>
+				<texture border="16">button_bg.png</texture>
+				<visible>System.ShowExitButton</visible>
+				<colordiffuse>$VAR[ColorDialogVar]</colordiffuse>
+			</control>
+			<control type="image" id="90303">
+				<description>Shutdown button</description>
+				<width>510</width>
+				<height>60</height>
+				<align>left</align>
+				<texture border="16">button_bg.png</texture>
+				<colordiffuse>$VAR[ColorDialogVar]</colordiffuse>
+			</control>
+			<control type="image" id="90308">
+				<description>Reboot button</description>
+				<width>510</width>
+				<height>60</height>
+				<align>left</align>
+				<texture border="16">button_bg.png</texture>
+				<visible>System.CanReboot</visible>
+				<colordiffuse>$VAR[ColorDialogVar]</colordiffuse>
+			</control>
+
+			<control type="image" id="90314">
+				<description>Settings</description>
+				<width>510</width>
+				<height>60</height>
+				<align>left</align>
+				<texture border="16">button_bg.png</texture>
+				<colordiffuse>$VAR[ColorDialogVar]</colordiffuse>
+			</control>
+			<control type="image" id="90315">
+				<description>Reload Skin</description>
+				<width>510</width>
+				<height>60</height>
+				<align>left</align>
+				<texture border="16">button_bg.png</texture>
+				<colordiffuse>$VAR[ColorDialogVar]</colordiffuse>
+			</control>
+			<control type="image" id="90316">
+				<description>background image</description>
+				<width>510</width>
+				<height>30</height>
+				<texture flipy="true" border="16,0,16,16">button_border.png</texture>
+				<colordiffuse>$VAR[ColorDialogVar]</colordiffuse>
+			</control>
+		</control>
+		<control type="grouplist" id="9000">
+			<left>735</left>
+			<top>0</top>
+			<width>450</width>
+			<height>1080</height>
+			<onleft>9000</onleft>
+			<onright>9000</onright>
+			<onup>9000</onup>
+			<ondown>9000</ondown>
+			<itemgap>0</itemgap>
+			<align>center</align>
+			<control type="button" id="1">
+				<description>TOKEN</description>
+				<label>[B][COLOR=lime]FORUM[/COLOR][/B]</label>
+				<onclick>Dialog.Close(all,true)</onclick>
+				<onclick>RunScript(skin.easytv,home)</onclick>
+			</control>
+			<control type="button" id="3">
+				<description>Settings</description>
+				<label>INSTALL BUNDLE</label>
+				<onclick>Dialog.Close(all,true)</onclick>
+				<onclick>RunScript(skin.easytv,install)</onclick>
+			</control>
+			<control type="button" id="5">
+				<description>EASYTV SKIN RELOAD</description>
+				<label>SKIN RELOAD</label>
+				<onclick>Dialog.Close(all,true)</onclick>
+				<onclick>ReloadSkin()</onclick>
+			</control>
+			<control type="button" id="6">
+				<description>TOKEN</description>
+				<label>RESTART</label>
+				<onclick>RunScript(skin.easytv,restart)</onclick>
+			</control>
+			<control type="button" id="7">
+				<description>Quit</description>
+				<label>EASYTV BEENDEN</label>
+				<onclick>RunScript(skin.easytv,shutdown)</onclick>
+			</control>
+		</control>
+	</controls>
+</window>

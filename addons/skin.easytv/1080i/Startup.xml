@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+    <defaultcontrol>10</defaultcontrol>
+    <onunload>PlayerControl(Stop)</onunload>
+    <controls>
+        <control type="button" id="10">
+			<visible>!Skin.HasSetting(new.restart) + Skin.HasSetting(bundle.install) + Skin.HasSetting(a.install)</visible>
+			<onfocus>PlayMedia(special://skin/media/introb.mp4,1)</onfocus>
+			<animation effect="fade" end="1000" time="1000">Focus</animation>
+			</control>
+
+		<control type="button" id="10">
+			<visible>!Skin.HasSetting(bundle.install) + !Skin.HasSetting(a.install)</visible>
+			<onfocus>PlayMedia(special://skin/media/introa.mp4,1)</onfocus>
+			<animation effect="fade" end="1000" time="1000">Focus</animation>
+			</control>
+
+		<control type="button" id="10">
+			<visible>Skin.HasSetting(new.restart)</visible>
+			<onfocus>noop</onfocus> 
+			<animation effect="fade" end="1000" time="1000">Focus</animation>
+			</control>
+        <control type="group">
+            <visible>Player.HasVideo</visible>
+        </control>
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>100%</width>
+            <height>100%</height>
+            <texture>black.png</texture>
+        </control>
+        <control type="image">
+            <left>471</left>
+            <top>377</top>
+            <width>978</width>
+            <height>326</height>
+            <texture>logo.gif</texture>
+        </control>
+        <control type="videowindow">
+            <top>10%</top>
+            <left>5%</left>
+            <width>90%</width>
+            <height>80%</height>
+        </control>
+        <control type="label">
+            <left>0</left>
+            <top>1000</top>
+            <width>50%</width>
+            <height>40</height>
+            <font>font52_title</font>
+            <align>center</align>
+            <label>"We love the Karnickel..."</label>
+
+        </control>
+        <control type="label">
+            <left>50%</left>
+            <top>1000</top>
+            <width>50%</width>
+            <height>40</height>
+            <font>font52_title</font>
+            <align>center</align>
+            <label>CREATED BY SHAASE</label>
+        </control>
+    </controls>
+</window>

@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.util.Log;
 
@@ -10,7 +10,7 @@ public class XBMCTextureCache
 {
   native String _unwrapImageURL(String image);
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   public XBMCTextureCache()
   {

@@ -1,0 +1,35 @@
+<window id="12345">
+    <defaultcontrol>9000</defaultcontrol>
+
+    <controls>
+
+        <!-- Hintergrund -->
+        <control type="image">
+            <texture>DialogBack.png</texture>
+            <posx>100</posx>
+            <posy>50</posy>
+            <width>1000</width>
+            <height>600</height>
+        </control>
+
+        <!-- Titel -->
+        <control type="label">
+            <label>Upload Manager</label>
+            <posx>150</posx>
+            <posy>70</posy>
+            <font>font13_title</font>
+        </control>
+
+        <!-- Upload-Liste -->
+        <control type="list" id="9000">
+            <posx>150</posx>
+            <posy>120</posy>
+            <width>900</width>
+            <height>450</height>
+            <itemheight>60</itemheight>
+
+            <content />
+        </control>
+
+    </controls>
+</window>

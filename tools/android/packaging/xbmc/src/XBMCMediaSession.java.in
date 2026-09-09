@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -32,7 +32,7 @@ public class XBMCMediaSession
 
   native boolean _onMediaButtonEvent(Intent intent);
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   private class XBMCMediaSessionCallback extends MediaSession.Callback
   {

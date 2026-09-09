@@ -1,0 +1,34 @@
+<shortcuts>
+	<shortcut>
+		<defaultID />
+		<label>[B]VAVOO FILM SUCHE[/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>image://DefaultAddonsSearch.png/</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.vavooto/?id=movie.popular&amp;action=search",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B]VAVOO SERIEN SUCHE[/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>image://DefaultAddonsSearch.png/</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.vavooto/?id=series.popular&amp;action=search",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=lime]XSHIP FILME[/COLOR][/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/xship.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.xship/?action=moviesSearch",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=lime]XSHIP TV-SERIEN[/COLOR][/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/xship.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.xship/?action=tvshowsSearch",return)</action>
+		</shortcut>
+	</shortcuts>

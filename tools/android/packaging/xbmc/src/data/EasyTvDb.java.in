@@ -1,0 +1,318 @@
+package app.easytv.org.data;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+import app.easytv.org.sec.CryptoHelper;
+
+public class EasyTvDb extends SQLiteOpenHelper {
+
+    private static final String DATABASE_NAME = "easytv.db";
+    private static final int DATABASE_VERSION = 5;
+    private static EasyTvDb instance;
+
+    public static synchronized EasyTvDb get(Context ctx) {
+        if (instance == null) {
+            instance = new EasyTvDb(ctx.getApplicationContext());
+        }
+        return instance;
+    }
+
+    private EasyTvDb(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        // History
+        db.execSQL("CREATE TABLE IF NOT EXISTS history (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "favicon TEXT," +
+                "url TEXT NOT NULL," +
+                "titel TEXT," +
+                "ts INTEGER DEFAULT (strftime('%s','now')))");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_history_url ON history(url)");
+
+        // Favorites
+        db.execSQL("CREATE TABLE IF NOT EXISTS favorites (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "favicon TEXT," +
+                "url TEXT NOT NULL UNIQUE," +
+                "titel TEXT," +
+                "ts INTEGER DEFAULT (strftime('%s','now')))");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_fav_url ON favorites(url)");
+
+        // Clipboard
+        db.execSQL("CREATE TABLE IF NOT EXISTS clipboard (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "entry TEXT NOT NULL UNIQUE," +
+                "ts INTEGER DEFAULT (strftime('%s','now')))");
+
+        // EasyInfo
+        db.execSQL("CREATE TABLE IF NOT EXISTS easyinfo (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "ekey TEXT NOT NULL UNIQUE," +
+                "evalue TEXT NOT NULL," +
+                "ts INTEGER DEFAULT (strftime('%s','now')))");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_easyinfo_key ON easyinfo(ekey)");
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Keine Upgrade-Schritte nötig für Webview Settings
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        syncTables(db);
+    }
+
+    private void syncTables(SQLiteDatabase db) {
+        try {
+            db.execSQL("CREATE TABLE IF NOT EXISTS web_history (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL, title TEXT, favicon TEXT)");
+            db.execSQL("CREATE TABLE IF NOT EXISTS web_favorites (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL, title TEXT, favicon TEXT)");
+
+            // Sync web_history -> history
+            db.execSQL("INSERT OR IGNORE INTO history (url, titel, favicon) SELECT url, title, favicon FROM web_history WHERE url IS NOT NULL AND url != ''");
+            // Sync history -> web_history
+            db.execSQL("INSERT OR IGNORE INTO web_history (url, title, favicon) SELECT url, titel, favicon FROM history WHERE url IS NOT NULL AND url != ''");
+
+            // Sync web_favorites -> favorites
+            db.execSQL("INSERT OR IGNORE INTO favorites (url, titel, favicon) SELECT url, title, favicon FROM web_favorites WHERE url IS NOT NULL AND url != ''");
+            // Sync favorites -> web_favorites
+            db.execSQL("INSERT OR IGNORE INTO web_favorites (url, title, favicon) SELECT url, titel, favicon FROM favorites WHERE url IS NOT NULL AND url != ''");
+        } catch (Exception e) {
+            android.util.Log.e("EasyTV", "Error syncing tables onOpen", e);
+        }
+    }
+
+    public void notifyKodiContainerRefresh() {
+        new Thread(() -> {
+            try {
+                okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
+                String jsonPayload = "{\"jsonrpc\":\"2.0\",\"method\":\"GUI.ExecuteBuiltIn\",\"params\":{\"function\":\"Container.Refresh\"},\"id\":1}";
+                okhttp3.RequestBody body = okhttp3.RequestBody.create(jsonPayload, okhttp3.MediaType.parse("application/json; charset=utf-8"));
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url("http://localhost:8080/jsonrpc")
+                        .post(body)
+                        .build();
+                try (okhttp3.Response response = client.newCall(request).execute()) {}
+            } catch (Exception ignored) {}
+        }).start();
+    }
+
+    /* ---------- HISTORY ---------- */
+    public long addHistory(String favicon, String url, String titel) {
+        ContentValues v = new ContentValues();
+        v.put("favicon", favicon);
+        v.put("url", url);
+        v.put("titel", titel);
+        long id = getWritableDatabase().insert("history", null, v);
+
+        try {
+            SQLiteDatabase db = getWritableDatabase();
+            db.execSQL("CREATE TABLE IF NOT EXISTS web_history (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "url TEXT UNIQUE NOT NULL," +
+                    "title TEXT," +
+                    "favicon TEXT)");
+            db.execSQL("DELETE FROM web_history WHERE url = ?", new String[]{url});
+            ContentValues wv = new ContentValues();
+            wv.put("url", url);
+            wv.put("title", titel != null ? titel : url);
+            wv.put("favicon", favicon != null ? favicon : "");
+            db.insert("web_history", null, wv);
+        } catch (Exception e) {
+            android.util.Log.e("EasyTV", "Error syncing web_history", e);
+        }
+
+        notifyKodiContainerRefresh();
+        return id;
+    }
+
+    public int updateHistoryFavicon(String url, String favicon) {
+        ContentValues v = new ContentValues();
+        v.put("favicon", favicon);
+        int rows = getWritableDatabase().update("history", v, "url=?", new String[]{url});
+
+        try {
+            getWritableDatabase().update("web_history", v, "url=?", new String[]{url});
+        } catch (Exception ignored) {}
+
+        notifyKodiContainerRefresh();
+        return rows;
+    }
+
+    public Cursor getHistoryDesc() {
+        return getReadableDatabase().rawQuery(
+                "SELECT id,favicon,url,titel,ts FROM history ORDER BY ts DESC", null);
+    }
+
+    public int clearHistory() {
+        try {
+            getWritableDatabase().delete("web_history", null, null);
+        } catch (Exception ignored) {}
+        int rows = getWritableDatabase().delete("history", null, null);
+        notifyKodiContainerRefresh();
+        return rows;
+    }
+
+    public int deleteHistoryItem(long id) {
+        try {
+            Cursor c = getReadableDatabase().query("history", new String[]{"url"}, "id=?", new String[]{String.valueOf(id)}, null, null, null);
+            if (c != null) {
+                if (c.moveToFirst()) {
+                    String url = c.getString(0);
+                    getWritableDatabase().delete("web_history", "url=?", new String[]{url});
+                }
+                c.close();
+            }
+        } catch (Exception ignored) {}
+        int rows = getWritableDatabase().delete("history", "id=?", new String[]{String.valueOf(id)});
+        notifyKodiContainerRefresh();
+        return rows;
+    }
+
+    /* ---------- FAVORITES ---------- */
+    public long upsertFavorite(String favicon, String url, String titel) {
+        ContentValues v = new ContentValues();
+        v.put("favicon", favicon);
+        v.put("url", url);
+        v.put("titel", titel);
+        long id = getWritableDatabase().insertWithOnConflict(
+                "favorites", null, v, SQLiteDatabase.CONFLICT_REPLACE);
+
+        try {
+            SQLiteDatabase db = getWritableDatabase();
+            db.execSQL("CREATE TABLE IF NOT EXISTS web_favorites (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "url TEXT UNIQUE NOT NULL," +
+                    "title TEXT," +
+                    "favicon TEXT)");
+            ContentValues wv = new ContentValues();
+            wv.put("url", url);
+            wv.put("title", titel != null ? titel : url);
+            wv.put("favicon", favicon != null ? favicon : "");
+            db.insertWithOnConflict("web_favorites", null, wv, SQLiteDatabase.CONFLICT_REPLACE);
+        } catch (Exception ignored) {}
+
+        notifyKodiContainerRefresh();
+        return id;
+    }
+
+    public int clearFavorites() {
+        try {
+            getWritableDatabase().delete("web_favorites", null, null);
+        } catch (Exception ignored) {}
+        int rows = getWritableDatabase().delete("favorites", null, null);
+        notifyKodiContainerRefresh();
+        return rows;
+    }
+
+    public int deleteFavoritesItem(long id) {
+        try {
+            Cursor c = getReadableDatabase().query("favorites", new String[]{"url"}, "id=?", new String[]{String.valueOf(id)}, null, null, null);
+            if (c != null) {
+                if (c.moveToFirst()) {
+                    String url = c.getString(0);
+                    getWritableDatabase().delete("web_favorites", "url=?", new String[]{url});
+                }
+                c.close();
+            }
+        } catch (Exception ignored) {}
+        int rows = getWritableDatabase().delete("favorites", "id=?", new String[]{String.valueOf(id)});
+        notifyKodiContainerRefresh();
+        return rows;
+    }
+
+    public long insertFavoriteIfAbsent(String favicon, String url, String titel) {
+        ContentValues v = new ContentValues();
+        v.put("favicon", favicon);
+        v.put("url", url);
+        v.put("titel", titel);
+        long id = getWritableDatabase().insertWithOnConflict(
+                "favorites", null, v, SQLiteDatabase.CONFLICT_IGNORE);
+
+        try {
+            SQLiteDatabase db = getWritableDatabase();
+            db.execSQL("CREATE TABLE IF NOT EXISTS web_favorites (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "url TEXT UNIQUE NOT NULL," +
+                    "title TEXT," +
+                    "favicon TEXT)");
+            ContentValues wv = new ContentValues();
+            wv.put("url", url);
+            wv.put("title", titel != null ? titel : url);
+            wv.put("favicon", favicon != null ? favicon : "");
+            db.insertWithOnConflict("web_favorites", null, wv, SQLiteDatabase.CONFLICT_IGNORE);
+        } catch (Exception ignored) {}
+
+        notifyKodiContainerRefresh();
+        return id;
+    }
+
+    public Cursor getFavoritesAsc() {
+        return getReadableDatabase().rawQuery(
+                "SELECT id,favicon,url,titel,ts FROM favorites ORDER BY titel COLLATE NOCASE ASC", null);
+    }
+
+    /* ---------- CLIPBOARD ---------- */
+    public long addClipboardEntry(String text) {
+        ContentValues v = new ContentValues();
+        v.put("entry", text);
+        return getWritableDatabase().insertWithOnConflict(
+                "clipboard", null, v, SQLiteDatabase.CONFLICT_IGNORE);
+    }
+
+    public int deleteClipboardEntry(long id) {
+        return getWritableDatabase().delete("clipboard", "id=?", new String[]{String.valueOf(id)});
+    }
+
+    public Cursor getClipboardDesc() {
+        return getReadableDatabase().rawQuery(
+                "SELECT id,entry,ts FROM clipboard ORDER BY ts DESC", null);
+    }
+
+    public int clearClipboard() {
+        return getWritableDatabase().delete("clipboard", null, null);
+    }
+
+    /* ---------- EASYINFO ---------- */
+    public long putEasyInfo(String key, String value) {
+        try {
+            String enc = CryptoHelper.encrypt(value);
+            ContentValues v = new ContentValues();
+            v.put("ekey", key);
+            v.put("evalue", enc);
+            return getWritableDatabase().insertWithOnConflict(
+                    "easyinfo", null, v, SQLiteDatabase.CONFLICT_REPLACE);
+        } catch (Exception e) {
+            throw new RuntimeException("Encrypt failed", e);
+        }
+    }
+
+    public String getEasyInfo(String key) {
+        Cursor c = getReadableDatabase().query("easyinfo",
+                new String[]{"evalue"}, "ekey=?", new String[]{key},
+                null, null, null);
+        try {
+            if (!c.moveToFirst()) return null;
+            String enc = c.getString(0);
+            try {
+                return CryptoHelper.decrypt(enc);
+            } catch (Exception e) {
+                return enc;
+            }
+        } finally {
+            c.close();
+        }
+    }
+
+    public int removeEasyInfo(String key) {
+        return getWritableDatabase().delete("easyinfo", "ekey=?", new String[]{key});
+    }
+}

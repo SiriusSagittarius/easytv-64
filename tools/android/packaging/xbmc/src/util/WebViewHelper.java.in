@@ -1,0 +1,229 @@
+package app.easytv.org.util;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.view.View;
+import android.view.WindowManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import app.easytv.org.WebActivity;
+
+public final class WebViewHelper {
+    public static List<String> blockList = new ArrayList<>();
+
+
+
+
+    private WebViewHelper() {}
+
+    public static void loadFromPrefsAndApply(@NonNull Activity activity, @NonNull WebView webView) {
+        SharedPreferences p = activity.getSharedPreferences("app.easytv.org_preferences", Context.MODE_PRIVATE);
+        WebViewSettings s = mapFromPrefs(p);
+        applySettings(activity, webView, s);
+    }
+
+    public static void applySettings(@NonNull Activity activity,
+                                     @NonNull WebView webView,
+                                     @NonNull WebViewSettings s) {
+
+        if (webView.getSettings() == null) return;
+
+        WebSettings ws = webView.getSettings();
+
+        ws.setJavaScriptEnabled(s.javascript);
+        ws.setLoadsImagesAutomatically(s.loadsImagesAutomatically);
+
+        try { ws.setJavaScriptCanOpenWindowsAutomatically(s.javaScriptCanOpenWindowsAutomatically); } catch (Throwable ignored) {}
+        try { ws.setMediaPlaybackRequiresUserGesture(s.mediaPlaybackRequiresUserGesture); } catch (Throwable ignored) {}
+
+        if (s.useragent != null && !s.useragent.trim().isEmpty()) {
+            ws.setUserAgentString(resolveUserAgent(ws, s.useragent));
+        }
+
+        ws.setDomStorageEnabled(true);
+        ws.setDatabaseEnabled(true);
+        ws.setAllowFileAccess(true);
+        ws.setAllowContentAccess(true);
+        ws.setLoadWithOverviewMode(true);
+        ws.setUseWideViewPort(true);
+
+        tryEnableForceDark(webView, s.darkmode);
+
+
+        applyFullscreen(activity, s.fullscreen);
+
+
+
+
+        SharedPreferences prefs = activity.getSharedPreferences("app.easytv.org_preferences", Context.MODE_PRIVATE);
+        boolean currentAdblock = prefs.getBoolean("adblock", true);
+        if (currentAdblock != s.adblock) {
+            prefs.edit().putBoolean("adblock", s.adblock).apply();
+
+
+            if (activity instanceof WebActivity) {
+                if (webView != null) {
+                    webView.post(() -> webView.reload());
+                }
+            }
+        }
+
+        boolean currentMouse = prefs.getBoolean("mousemode", false);
+
+
+        if (currentMouse != s.mousemode) {
+            prefs.edit().putBoolean("mousemode", s.mousemode).apply();
+
+            Intent intent = new Intent(activity, WebActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(intent);
+            activity.finish();
+        }
+    }
+
+    public static void loadBlockList(Context context) {
+        blockList.clear();
+        try {
+            File file = new File(context.getFilesDir(), "adblist");
+
+            if (file.exists() && file.canRead()) {
+                try (InputStream inputStream = new FileInputStream(file);
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.trim();
+                        if (!line.isEmpty()) {
+                            blockList.add("https://" + line);
+                            blockList.add("http://" + line);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static List<String> getBlockList() {
+        return blockList;
+    }
+
+
+    public static class WebViewSettings {
+        public boolean fullscreen;
+        public boolean darkmode;
+        public boolean mousemode;
+        public boolean javascript;
+        public boolean adblock;
+        public String useragent;
+        public int maxFavorites;
+        public int maxHistory;
+        public int maxClipboard;
+        public boolean mediaPlaybackRequiresUserGesture;
+        public boolean loadsImagesAutomatically;
+        public boolean javaScriptCanOpenWindowsAutomatically;
+        public String remoteConfig;
+        public String downloadPath;
+    }
+
+    @NonNull
+    public static WebViewSettings mapFromPrefs(@NonNull SharedPreferences p) {
+        WebViewSettings s = new WebViewSettings();
+
+        s.fullscreen  = p.getBoolean("fullscreen", false);
+        s.darkmode    = p.getBoolean("darkmode", true);
+        s.mousemode   = p.getBoolean("mousemode", false);
+        s.javascript  = p.getBoolean("javascript", true);
+        s.adblock     = p.getBoolean("adblock", true);
+
+        s.useragent   = p.getString("useragent", "safari_ipad");
+
+        s.maxFavorites = parseIntSafe(p.getString("max_favorites", "100"), 100);
+        s.maxHistory   = parseIntSafe(p.getString("max_history", "100"), 100);
+        s.maxClipboard = parseIntSafe(p.getString("max_clipboard", "50"), 50);
+
+        s.mediaPlaybackRequiresUserGesture =
+                p.getBoolean("mediaPlaybackRequiresUserGesture", true);
+
+        s.loadsImagesAutomatically =
+                p.getBoolean("loadsImagesAutomatically", true);
+
+        s.javaScriptCanOpenWindowsAutomatically =
+                p.getBoolean("javaScriptCanOpenWindowsAutomatically", false);
+
+        s.remoteConfig = p.getString("remote_config", null);
+        s.downloadPath = p.getString("download_path", null);
+
+        return s;
+    }
+
+    private static int parseIntSafe(@Nullable String v, int def) {
+        try { return Integer.parseInt(String.valueOf(v)); } catch (Exception e) { return def; }
+    }
+
+    private static void tryEnableForceDark(@NonNull WebView webView, boolean dark) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+            WebSettingsCompat.setForceDark(webView.getSettings(),
+                    dark ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_OFF);
+        }
+    }
+
+    private static void applyFullscreen(@NonNull Activity activity, boolean fullscreen) {
+        if (fullscreen) {
+            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            activity.getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            );
+        } else {
+            activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        }
+    }
+
+    private static String resolveUserAgent(@NonNull WebSettings ws, @NonNull String key) {
+        String def = ws.getUserAgentString();
+        switch (key) {
+            case "chrome_mobile":
+                return "Mozilla/5.0 (Linux; Android 9; TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Mobile Safari/537.36";
+            case "chrome_desktop":
+                return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36";
+            case "firefox_mobile":
+                return "Mozilla/5.0 (Android 9; Mobile; rv:68.0) Gecko/68.0 Firefox/68.0";
+            case "firefox_desktop":
+                return "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0";
+            case "edge_desktop":
+                return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64";
+            case "safari_iphone":
+                return "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1";
+            case "safari_ipad":
+                return "Mozilla/5.0 (iPad; CPU OS 13_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Mobile/15E148 Safari/604.1";
+            case "opera_desktop":
+                return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 OPR/77.0.4054.90";
+            default:
+                return def;
+        }
+    }
+}

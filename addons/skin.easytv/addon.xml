@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon
+    id="skin.easytv" version="1500" name="EasySkin" provider-name="EUCH">
+    <requires>
+        <import addon="xbmc.gui" version="5.17.0"/>
+        <import addon="xbmc.addon" version="12.0.0"/>
+
+    </requires>
+   <extension point="xbmc.addon.repository">
+        <dir>
+            <info compressed="false">https://easy-tv.org/easytv/repo/and32/addons.xml</info>
+            <checksum>https://easy-tv.org/easytv/repo/and32/addons.xml.md5</checksum>
+            <datadir zip="true">https://easy-tv.org/easytv/repo/and32/</datadir>
+        </dir>
+    </extension>
+
+
+
+    <extension point="xbmc.python.script" library="script.py">
+        <provides>executable</provides>
+    </extension>
+    <extension
+        point="xbmc.gui.skin"
+        debugging="false"
+        effectslowdown="0.75">
+        <res width="1920" height="1080" aspect="16:9" default="true" folder="1080i" />
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="de_DE">EasySkin von euch</summary>
+        <description lang="de_DE">EasySkin: Eine noch dreiste Zusammenstellung von Features meiner Lieblings-Skins, darunter Mimic, Aeon Nox, reFocus und Artic Zephyr.</description>
+        <platform>all</platform>
+        <license></license>
+        <forum>https://easy-tv.org</forum>
+        <website></website>
+        <email></email>
+        <source></source>
+        <assets>
+            <icon>resources/icon.png</icon>
+            <fanart>resources/fanart.jpg</fanart>
+        </assets>
+        <news></news>
+    </extension>
+</addon>

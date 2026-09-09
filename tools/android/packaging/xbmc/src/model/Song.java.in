@@ -1,4 +1,4 @@
-package @APP_PACKAGE@.model;
+package app.easytv.org.model;
 
 /**
  * Created by koyin on 26/12/2017.

@@ -1,0 +1,7 @@
+ <settings>
+    <category id="tcloud_settings" label="32001">
+        <setting id="tcloud.isEnabled" type="bool" label="32002" default="false" />
+        <setting id="tcloud.token" type="text" label="32003" default="" visible="eq(-1,true)" />
+        <setting id="tcloud.download_path" type="folder" label="32004" default="/sdcard/Download" visible="eq(-2,true)" />
+    </category>
+</settings>

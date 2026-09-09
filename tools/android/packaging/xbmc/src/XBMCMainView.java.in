@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.content.Context;
 import android.graphics.PixelFormat;
@@ -18,7 +18,7 @@ public class XBMCMainView extends SurfaceView implements SurfaceHolder.Callback
   native void _surfaceCreated(SurfaceHolder holder);
   native void _surfaceDestroyed(SurfaceHolder holder);
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   public boolean mIsCreated = false;
 

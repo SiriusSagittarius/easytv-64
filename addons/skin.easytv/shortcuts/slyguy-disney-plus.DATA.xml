@@ -1,0 +1,34 @@
+<shortcuts>
+	<shortcut>
+		<defaultID>plugin.video.tvnow.de</defaultID>
+		<label>[B]TV NOW[/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/tvnow.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.tvnow.de",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>slyguy.disney.plus</defaultID>
+		<label>[B]DISNEY+[/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/disney.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://slyguy.disney.plus",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>plugin.video.joyn</defaultID>
+		<label>[B]JOYN[/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/joyn.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.joyn",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>slyguy.paramount.plus</defaultID>
+		<label>[B]PARAMOUNT+[/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/para.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://slyguy.paramount.plus",return)</action>
+		</shortcut>
+	</shortcuts>

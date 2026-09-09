@@ -1,0 +1,34 @@
+<shortcuts>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=lime]XSHIP [/COLOR][/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/xship.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.xship/?action=movieNavigator",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B]VAVOO FILME[/B]</label>
+		<label2>Video-Addon</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>image://DefaultMovies.png/</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.vavooto/?action=indexMovie",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>filme</defaultID>
+		<label>[B]JOYN FILME[/B]</label>
+		<label2>Favorit</label2>
+		<icon>DefaultFolder.png</icon>
+		<thumb>/storage/emulated/0/Android/data/app.easytv.org/files/.easytv/addons/plugin.video.joyn/resources/media/logo.gif</thumb>
+		<action>ActivateWindow(10025,"plugin://plugin.video.joyn/?block_id&amp;channel_id&amp;client_data&amp;compilation_id&amp;fav_type&amp;mode=categories&amp;movie_id&amp;parent_block_id&amp;path=%2ffilme&amp;season_id&amp;stream_type=VOD&amp;teaser_id&amp;title=Filme&amp;tv_show_id&amp;video_id&amp;viewtype",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B]PROVIDER SUCHE[/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>ActivateWindow(Videos,"plugin://plugin.video.themoviedb.helper/?info=watch_providers&amp;tmdb_type=movie&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbHelper.Widgets.Reload)]",return)</action>
+		</shortcut>
+	</shortcuts>

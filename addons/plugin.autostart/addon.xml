@@ -1,0 +1,16 @@
+<addon id="plugin.autostart" version="10.0.3" name="Autostart" provider-name="Shaase">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.python.module" library="resources/lib/"/>
+    <extension point="xbmc.python.script" library="script.py">
+        <provides>script</provides>
+    </extension>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>executable</provides>
+    </extension>
+    <extension point="xbmc.service" library="service.py" start="startup">
+        <provides>executable</provides>
+    </extension>
+
+</addon>

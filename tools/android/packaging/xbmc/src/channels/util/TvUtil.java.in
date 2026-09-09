@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package @APP_PACKAGE@.channels.util;
+package app.easytv.org.channels.util;
 
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
@@ -37,10 +37,10 @@ import androidx.tvprovider.media.tv.Channel;
 import androidx.tvprovider.media.tv.ChannelLogoUtils;
 import androidx.tvprovider.media.tv.TvContractCompat;
 
-import @APP_PACKAGE@.Splash;
-import @APP_PACKAGE@.channels.SyncChannelJobService;
-import @APP_PACKAGE@.channels.SyncProgramsJobService;
-import @APP_PACKAGE@.channels.model.Subscription;
+import app.easytv.org.Splash;
+import app.easytv.org.channels.SyncChannelJobService;
+import app.easytv.org.channels.SyncProgramsJobService;
+import app.easytv.org.channels.model.Subscription;
 
 /**
  * Manages interactions with the TV Provider.
@@ -48,7 +48,7 @@ import @APP_PACKAGE@.channels.model.Subscription;
 public class TvUtil
 {
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
   private static final int CHANNEL_JOB_ID = 500;
   private static final int CHANNEL_TRIGGERED_JOB_ID_OFFSET = 1000;
   private static final int CHANNEL_TIMED_JOB_ID_OFFSET = 2000;

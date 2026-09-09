@@ -1,0 +1,27 @@
+<shortcuts>
+	<shortcut>
+		<defaultID />
+		<label>[B][COLOR=lime]TV-Serien[/COLOR][/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>thumb</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.xship/?action=tvshowsSearch",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B]VAVOO SERIEN[/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>special://skin/extras/icons/pic/vavoo.png</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.vavooto/?id=series.popular&amp;action=search",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>[B]PROVIDER[/B]</label>
+		<label2>Benutzerdefinierter Eintrag</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>ActivateWindow(Videos,"plugin://plugin.video.themoviedb.helper/?info=watch_providers&amp;tmdb_type=tv&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbHelper.Widgets.Reload)]",return)</action>
+		<disabled>True</disabled>
+		</shortcut>
+	</shortcuts>

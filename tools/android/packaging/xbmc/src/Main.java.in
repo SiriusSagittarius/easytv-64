@@ -1,6 +1,6 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
-import @APP_PACKAGE@.channels.util.TvUtil;
+import app.easytv.org.channels.util.TvUtil;
 
 import static android.content.pm.PackageManager.FEATURE_LEANBACK;
 
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 
 public class Main extends NativeActivity implements Choreographer.FrameCallback
 {
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   public static Main MainActivity = null;
   public XBMCMainView mMainView = null;
@@ -120,7 +120,7 @@ public class Main extends NativeActivity implements Choreographer.FrameCallback
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
-    System.loadLibrary("@APP_NAME_LC@");
+    System.loadLibrary("easytv");
 
     super.onCreate(savedInstanceState);
 

@@ -1,0 +1,137 @@
+package app.easytv.org;
+
+import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Toast;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class over extends Activity {
+
+    private LinearLayout layout;
+    private EditText editText;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+
+        layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(16, 16, 16, 16);
+        layout.setBackgroundColor(0xFF444444);
+        layout.setGravity(Gravity.CENTER);
+
+        editText = new EditText(this);
+        editText.setHintTextColor(0xFF000000);
+        editText.setTextColor(0xFF000000);
+        editText.setBackgroundColor(0xFF444444);
+        editText.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        editText.setMinHeight(24);
+
+        layout.addView(editText);
+        setContentView(layout);
+
+
+        editText.setFocusable(true);
+        editText.setFocusableInTouchMode(true);
+        editText.requestFocus();
+
+
+
+        new Handler().postDelayed(() -> {
+            editText.requestFocus();
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+            }
+        }, 1000);
+        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        editText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE ||
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_UP)) {
+                String text = editText.getText().toString().trim();
+                if (!text.isEmpty()) {
+                    sendRequestWithOkHttp(text);
+                }
+                return true;
+            }
+            return false;
+        });
+
+
+
+        editText.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                Toast.makeText(over.this, "Eingabe beendet", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void sendRequestWithOkHttp(String text) {
+        OkHttpClient client = new OkHttpClient();
+        String url = "http://localhost:8080/jsonrpc";
+
+        String jsonSendText = "{\"jsonrpc\":\"2.0\",\"method\":\"Input.SendText\",\"params\":{\"text\":\"" + text + "\",\"done\":false},\"id\":1}";
+
+        RequestBody body = RequestBody.create(jsonSendText, MediaType.parse("application/json; charset=utf-8"));
+        Request request = new Request.Builder().url(url).post(body).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null && editText != null) {
+                        imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                    }
+
+
+                    Toast.makeText(over.this, "Fehler: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+            @Override public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> {
+
+                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if (imm != null && editText != null) {
+                            imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                        }
+
+                        Toast.makeText(over.this, "Text erfolgreich gesendet!", Toast.LENGTH_SHORT).show();
+
+
+                        new Handler().postDelayed(() -> finish(), 300);
+                    });
+
+                } else {
+                    runOnUiThread(() -> Toast.makeText(over.this, "Server-Fehler: " + response.code(), Toast.LENGTH_SHORT).show());
+                }
+            }
+        });
+    }
+}

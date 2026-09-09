@@ -1,0 +1,26 @@
+package app.easytv.org;
+public class FavoriteItem {
+    private String id;
+    private String url;
+    private String title;
+    private String faviconUrl;
+
+    public FavoriteItem(long id, String url, String title, String faviconUrl) {
+        this.id = String.valueOf(id);
+        this.url = url;
+        this.title = title;
+        this.faviconUrl = faviconUrl;
+    }
+    public long getId() {
+        return Long.parseLong(id);
+    }
+    public String getUrl() {
+        return url;
+    }
+    public String getTitle() {
+        return title;
+    }
+    public String getfaviconUrl() {
+        return faviconUrl;
+    }
+}

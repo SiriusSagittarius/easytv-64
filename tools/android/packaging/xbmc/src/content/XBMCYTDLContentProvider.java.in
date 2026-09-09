@@ -1,4 +1,4 @@
-package @APP_PACKAGE@.content;
+package app.easytv.org.content;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,11 +14,11 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.util.TimingLogger;
 
-import @APP_PACKAGE@.XBMCProperties;
+import app.easytv.org.XBMCProperties;
 
 public class XBMCYTDLContentProvider extends XBMCContentProvider
 {
-  private static String TAG = "@APP_NAME@";
+  private static String TAG = "EasyTV";
 
   public static String AUTHORITY = AUTHORITY_ROOT + ".ytdl";
 

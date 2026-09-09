@@ -1,0 +1,867 @@
+package app.easytv.org;
+
+
+
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
+import android.text.InputType;
+import android.util.SparseBooleanArray;
+import android.view.KeyEvent;
+import android.view.MenuItem;
+import android.webkit.MimeTypeMap;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import androidx.documentfile.provider.DocumentFile;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
+import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.model.enums.CompressionMethod;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+public class DownloadList extends AppCompatActivity {
+    private static final int REQUEST_CODE_TREE = 42;
+    private TextView pathTextView;
+    private ListView listView;
+    private long backPressedTime = 0;
+    private File currentDir;
+    private ArrayAdapter<File> adapter;
+    private final List<File> copiedFiles = new ArrayList<>();
+    private File currentDocDir;
+
+    @SuppressLint("MissingInflatedId")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_download_list);
+
+        listView = findViewById(R.id.downloadListView);
+        pathTextView = findViewById(R.id.pathTextView);
+
+
+        if (currentDir == null) {
+            File startDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (startDir == null || !startDir.exists()) {
+                startDir = getFilesDir();
+            }
+            currentDir = startDir;
+            showFilesAndDirectories(currentDir);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        menu.add(0, 1, 0, "SELECT ALL").setIcon(android.R.drawable.ic_menu_add);
+        menu.add(0, 2, 1, "READ FILE").setIcon(R.drawable.stift);
+        menu.add(0, 3, 2, "NEW DIRECTORY").setIcon(R.drawable.ic_url);
+        menu.add(0, 4, 3, "NEW FILE").setIcon(R.drawable.ic_search);
+        menu.add(0, 5, 4, "RENAME").setIcon(R.drawable.ic_list);
+        menu.add(0, 6, 5, "COPY").setIcon(R.drawable.ic_copy);
+        menu.add(0, 7, 6, "PASTE").setIcon(R.drawable.ic_paste);
+        menu.add(0, 8, 7, "DELETE").setIcon(R.drawable.www);
+        menu.add(0, 9, 8, "ZIP FILE").setIcon(R.drawable.ic_help);
+        menu.add(0, 10, 9, "UNZIP FILE").setIcon(R.drawable.ceh);
+        menu.add(0, 11, 10, "INSTALL APK").setIcon(R.drawable.update);
+        menu.add(0, 12, 11, "QUIT").setIcon(R.drawable.cance);
+
+
+        for (int i = 0; i < menu.size(); i++) {
+            menu.getItem(i).setShowAsAction(
+                    MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT
+            );
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        SparseBooleanArray checked = listView.getCheckedItemPositions();
+        List<File> selected = new ArrayList<>();
+        for (int i = 0; i < adapter.getCount(); i++) {
+            File f = adapter.getItem(i);
+            if (f != null && checked.get(i)) selected.add(f);
+        }
+
+        switch (item.getItemId()) {
+            case 1:
+                for (int i = 0; i < adapter.getCount(); i++) {
+                    File f = adapter.getItem(i);
+                    listView.setItemChecked(i, f != null && f.isFile());
+                }
+                Toast.makeText(this, "Alle Dateien ausgewählt", Toast.LENGTH_SHORT).show();
+                return true;
+
+            case 2:
+                if (!selected.isEmpty()) readFileContent(selected.get(0));
+                else Toast.makeText(this, "Keine Datei ausgewählt", Toast.LENGTH_SHORT).show();
+                return true;
+
+            case 3:
+                createNewDirectory();
+                return true;
+
+            case 4:
+                createNewFile();
+                return true;
+
+            case 5:
+                if (!selected.isEmpty()) renameFile(selected.get(0));
+                else Toast.makeText(this, "Keine Datei ausgewählt", Toast.LENGTH_SHORT).show();
+                return true;
+
+            case 6:
+                copiedFiles.clear();
+                copiedFiles.addAll(selected);
+                Toast.makeText(this, copiedFiles.size() + " Datei(en) kopiert", Toast.LENGTH_SHORT).show();
+                return true;
+
+            case 7:
+                handlePasteFiles();
+                return true;
+
+            case 8:
+                deleteSelectedFiles(selected);
+                return true;
+
+            case 9:
+                if (!selected.isEmpty()) zipDialog(selected);
+                else Toast.makeText(this, "Keine Dateien ausgewählt", Toast.LENGTH_SHORT).show();
+                return true;
+
+            case 10:
+                if (!selected.isEmpty()) unzipDialog(selected.get(0));
+                else Toast.makeText(this, "Keine Datei ausgewählt", Toast.LENGTH_SHORT).show();
+                return true;
+
+            case 11:
+                if (!selected.isEmpty() && selected.get(0).getName().toLowerCase().endsWith(".apk"))
+                    installApk(DocumentFile.fromFile(selected.get(0)));
+                else Toast.makeText(this, "Keine APK-Datei ausgewählt", Toast.LENGTH_SHORT).show();
+                return true;
+
+            case 12:
+                finish();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+    private void zipDialog(List<File> selectedFiles) {
+
+        final String[] items = {
+                "ZIP ohne Passwort",
+                "ZIP mit Passwort"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle("ZIP erstellen")
+                .setItems(items, (d, which) -> {
+                    if (which == 0) askZipName(selectedFiles, null);
+                    else askZipPassword(selectedFiles);
+                })
+                .show();
+    }
+
+    private void askZipPassword(List<File> files) {
+
+    EditText input = new EditText(this);
+    input.setHint("Passwort eingeben");
+
+    new AlertDialog.Builder(this)
+            .setTitle("ZIP Passwort")
+            .setView(input)
+            .setPositiveButton("OK", (d, w) -> askZipName(files, input.getText().toString()))
+            .setNegativeButton("Abbrechen", null)
+            .show();
+    }
+    private void askZipName(List<File> files, String password) {
+
+    EditText input = new EditText(this);
+    input.setText("bundle.zip");
+
+    new AlertDialog.Builder(this)
+            .setTitle("ZIP-Dateiname")
+            .setView(input)
+            .setPositiveButton("Erstellen", (d, w) -> {
+
+                String name = input.getText().toString().trim();
+                if (!name.endsWith(".zip")) name += ".zip";
+
+                File out = new File(currentDir, name);
+                zipWithProgress(files, out, password);
+            })
+            .setNegativeButton("Abbrechen", null)
+            .show();
+    }
+    private void zipWithProgress(List<File> files, File output, String password) {
+
+    ProgressDialog pd = new ProgressDialog(this);
+    pd.setTitle("ZIP wird erstellt…");
+    pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+    pd.setIndeterminate(false);
+    pd.setCancelable(false);
+    pd.show();
+
+    new Thread(() -> {
+
+        try {
+            net.lingala.zip4j.ZipFile zip =
+                    (password == null) ?
+                            new net.lingala.zip4j.ZipFile(output) :
+                            new net.lingala.zip4j.ZipFile(output, password.toCharArray());
+
+            List<File> flat = new ArrayList<>();
+            for (File f : files) collectFiles(f, flat);
+
+            int total = flat.size();
+            pd.setMax(total);
+
+            long start = System.currentTimeMillis();
+            int count = 0;
+
+            for (File f : flat) {
+
+                count++;
+                long elapsed = System.currentTimeMillis() - start;
+                long eta = (elapsed * total / count) - elapsed;
+                final String etaStr = "" + (eta / 1000) + "s";
+
+                ZipParameters params = new ZipParameters();
+                params.setCompressionMethod(CompressionMethod.DEFLATE);
+                params.setFileNameInZip(getRelativePath(files.get(0).getParentFile(), f));
+
+                zip.addFile(f, params);
+
+                int finalCount = count;
+                runOnUiThread(() -> {
+                    pd.setProgress(finalCount);
+                    pd.setMessage(f.getName() + "\nRestzeit: " + etaStr);
+                });
+            }
+
+            runOnUiThread(() -> {
+                pd.dismiss();
+                Toast.makeText(this, "ZIP erstellt!", Toast.LENGTH_LONG).show();
+                showFilesAndDirectories(currentDir);
+            });
+
+        } catch (Exception ex) {
+            runOnUiThread(() -> {
+                pd.dismiss();
+                Toast.makeText(this, "Fehler: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+            });
+        }
+
+    }).start();
+    }
+
+    private void unzipDialog(File zipFile) {
+
+    if (!zipFile.getName().endsWith(".zip")) {
+        Toast.makeText(this, "Keine ZIP-Datei", Toast.LENGTH_SHORT).show();
+        return;
+    }
+
+    final String[] items = {
+            "Entpacken ohne Passwort",
+            "Mit Passwort entpacken"
+    };
+
+    new AlertDialog.Builder(this)
+            .setTitle("ZIP entpacken")
+            .setItems(items, (d, which) -> {
+                if (which == 0) unzipWithProgress(zipFile, null);
+                else askUnzipPassword(zipFile);
+            })
+            .show();
+    }
+    private void askUnzipPassword(File zipFile) {
+
+    EditText input = new EditText(this);
+    input.setHint("Passwort…");
+
+    new AlertDialog.Builder(this)
+            .setTitle("Passwort eingeben")
+            .setView(input)
+            .setPositiveButton("OK", (d,w)-> unzipWithProgress(zipFile, input.getText().toString()))
+            .setNegativeButton("Abbrechen", null)
+            .show();
+    }
+    private void unzipWithProgress(File zipFile, String password) {
+
+    ProgressDialog pd = new ProgressDialog(this);
+    pd.setTitle("Entpacken…");
+    pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+    pd.setCancelable(false);
+    pd.show();
+
+    new Thread(() -> {
+
+        try {
+            ZipFile zip = (password == null) ?
+                    new ZipFile(zipFile) :
+                    new ZipFile(zipFile, password.toCharArray());
+
+            List<FileHeader> headers = zip.getFileHeaders();
+            int total = headers.size();
+            pd.setMax(total);
+
+            long start = System.currentTimeMillis();
+            int count = 0;
+
+            for (FileHeader h : headers) {
+
+                count++;
+                long elapsed = System.currentTimeMillis() - start;
+                long eta = (elapsed * total / count) - elapsed;
+
+                int finalCount = count;
+                runOnUiThread(() -> {
+                    pd.setProgress(finalCount);
+                    pd.setMessage(h.getFileName() + "\nRestzeit: " + (eta/1000) + "s");
+                });
+
+                zip.extractFile(h, currentDir.getAbsolutePath());
+            }
+
+            runOnUiThread(() -> {
+                pd.dismiss();
+                Toast.makeText(this, "Entpackt!", Toast.LENGTH_LONG).show();
+                showFilesAndDirectories(currentDir);
+            });
+
+        } catch (Exception ex) {
+            runOnUiThread(() -> {
+                pd.dismiss();
+                Toast.makeText(this, "Fehler: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+            });
+        }
+
+    }).start();
+    }
+    private void collectFiles(File root, List<File> out) {
+    if (root.isDirectory()) {
+        File[] kids = root.listFiles();
+        if (kids != null)
+            for (File f : kids) collectFiles(f, out);
+    } else out.add(root);
+    }
+
+    private String getRelativePath(File root, File f) {
+        return f.getAbsolutePath().substring(root.getAbsolutePath().length() + 1);
+    }
+
+    private void showFilesAndDirectories(File directory) {
+        if (directory == null || !directory.isDirectory()) {
+            Toast.makeText(this, "Kein gültiges Verzeichnis", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        File[] arr = directory.listFiles();
+        if (arr == null) {
+            Toast.makeText(this, "Keine Berechtigung oder leer", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        java.util.Arrays.sort(arr, (a, b) -> {
+            if (a.isDirectory() && !b.isDirectory()) return -1;
+            if (!a.isDirectory() && b.isDirectory()) return 1;
+            return a.getName().compareToIgnoreCase(b.getName());
+        });
+
+        List<File> fileList = new ArrayList<>(java.util.Arrays.asList(arr));
+
+        adapter = new ArrayAdapter<File>(this, android.R.layout.simple_list_item_multiple_choice, fileList) {
+            @Override public android.view.View getView(int position, android.view.View convertView, android.view.ViewGroup parent) {
+                android.view.View view = super.getView(position, convertView, parent);
+                TextView tv = view.findViewById(android.R.id.text1);
+                File f = getItem(position);
+                if (f != null) {
+                    String name = f.getName();
+                    if (f.isDirectory()) tv.setText("📁 " + name);
+                    else tv.setText(name + " (" + formatFileSize(f.length()) + ")");
+                }
+                return view;
+            }
+        };
+
+        listView.setAdapter(adapter);
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+
+        pathTextView.setText(directory.getAbsolutePath());
+        currentDir = directory;
+    }
+    private String formatFileSize(long size) {
+        if (size <= 0) return "0 B";
+        final String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
+        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+        return new java.text.DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+    }
+
+    private void createNewFile() {
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
+        b.setTitle("Dateiname:");
+        final EditText input = new EditText(this);
+        input.setHint("z. B. .easytv");
+        b.setView(input);
+        b.setPositiveButton("Erstellen", (d, w) -> {
+            String name = input.getText().toString().trim();
+            if (name.isEmpty() || currentDir == null) return;
+            try {
+                File f = new File(currentDir, name);
+                if (f.exists()) {
+                    Toast.makeText(this,"Existiert schon",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (f.createNewFile()) {
+                    Toast.makeText(this,"Datei erstellt",Toast.LENGTH_SHORT).show();
+                    showFilesAndDirectories(currentDir);
+                } else {
+                    Toast.makeText(this,"Fehlgeschlagen",Toast.LENGTH_SHORT).show();
+                }
+            } catch (IOException e) {
+                Toast.makeText(this,"Fehler: "+e.getMessage(),Toast.LENGTH_SHORT).show();
+            }
+        });
+        b.setNegativeButton("Abbrechen", null);
+        b.show();
+    }
+
+    private void createNewDirectory() {
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
+        b.setTitle("Verzeichnisname:");
+        final EditText input = new EditText(this);
+        input.setHint("z. B. .easytv");
+        b.setView(input);
+        b.setPositiveButton("Erstellen", (d, w) -> {
+            String name = input.getText().toString().trim();
+            if (name.isEmpty() || currentDir == null) return;
+            File dir = new File(currentDir, name);
+            if (dir.exists()) {
+                Toast.makeText(this,"Existiert schon",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (dir.mkdirs()) {
+                Toast.makeText(this,"Verzeichnis erstellt",Toast.LENGTH_SHORT).show();
+                showFilesAndDirectories(currentDir);
+            } else {
+                Toast.makeText(this,"Fehlgeschlagen",Toast.LENGTH_SHORT).show();
+            }
+        });
+        b.setNegativeButton("Abbrechen", null);
+        b.show();
+    }
+
+    private void handlePasteFiles() {
+        if (copiedFiles.isEmpty()) {
+            Toast.makeText(this, "Zwischenablage ist leer", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (currentDir == null || !currentDir.isDirectory()) {
+            Toast.makeText(this, "Kein Zielverzeichnis", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int ok = 0, fail = 0;
+        for (File src : copiedFiles) {
+            try {
+                copyFileRecursive(src, currentDir);
+                ok++;
+            } catch (IOException e) {
+                fail++;
+            }
+        }
+        Toast.makeText(this, ok + " kopiert, " + fail + " Fehler", Toast.LENGTH_SHORT).show();
+        showFilesAndDirectories(currentDir);
+    }
+
+    private void copyFileRecursive(File src, File destDir) throws IOException {
+        if (src.isDirectory()) {
+            File newDir = new File(destDir, src.getName());
+            if (!newDir.exists() && !newDir.mkdirs())
+                throw new IOException("Ordner konnte nicht erstellt werden: " + newDir);
+            File[] kids = src.listFiles();
+            if (kids != null) for (File k : kids) copyFileRecursive(k, newDir);
+        } else {
+            File dst = new File(destDir, src.getName());
+            try (InputStream in = new FileInputStream(src);
+                 OutputStream out = new FileOutputStream(dst)) {
+                byte[] buf = new byte[8192]; int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            }
+        }
+    }
+
+    private void renameFile(File file) {
+        if (file == null) return;
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
+        b.setTitle("Datei umbenennen");
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setText(file.getName());
+        b.setView(input);
+        b.setPositiveButton("Umbenennen", (d, w) -> {
+            String newName = input.getText().toString().trim();
+            if (newName.isEmpty()) {
+                Toast.makeText(this, "Name darf nicht leer sein", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            File nn = new File(file.getParentFile(), newName);
+            if (file.renameTo(nn)) {
+                Toast.makeText(this, "Datei umbenannt", Toast.LENGTH_SHORT).show();
+                showFilesAndDirectories(currentDir);
+            } else {
+                Toast.makeText(this, "Umbenennen fehlgeschlagen", Toast.LENGTH_SHORT).show();
+            }
+        });
+        b.setNegativeButton("Abbrechen", null);
+        b.show();
+    }
+
+    private void deleteSelectedFiles(List<File> filesToDelete) {
+        if (filesToDelete == null || filesToDelete.isEmpty()) {
+            Toast.makeText(this, "Keine Dateien ausgewählt", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Dateien löschen")
+                .setMessage("Möchtest du wirklich " + filesToDelete.size() + " Datei(en) löschen?")
+                .setPositiveButton("Ja", (d, w) -> {
+                    int deleted = 0;
+                    for (File f : filesToDelete) if (deleteRecursive(f)) deleted++;
+                    Toast.makeText(this, deleted + " Datei(en) gelöscht", Toast.LENGTH_SHORT).show();
+                    showFilesAndDirectories(currentDir);
+                })
+                .setNegativeButton("Abbrechen", null)
+                .show();
+    }
+
+    private boolean deleteRecursive(File f) {
+        if (f == null || !f.exists()) return false;
+        if (f.isDirectory()) {
+            File[] kids = f.listFiles();
+            if (kids != null) for (File k : kids) deleteRecursive(k);
+        }
+        return f.delete();
+    }
+
+    private void openFile(File file) {
+        if (file == null || !file.exists()) {
+            Toast.makeText(this, "Datei existiert nicht.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String name = file.getName().toLowerCase();
+
+        if (name.endsWith(".zip")) {
+            unzip(file, currentDir);
+            showFilesAndDirectories(currentDir);
+            return;
+        }
+        if (name.matches(".*\\.(txt|log|py)$")) { readFileContent(file); return; }
+        if (name.matches(".*\\.(html|htm)$")) { openViaIntent(file); return; }
+        if (name.endsWith(".apk")) { installApk(DocumentFile.fromFile(file)); return; }
+
+        openViaIntent(file);
+    }
+
+    private void openViaIntent(File f) {
+        Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".Provider", f);
+        String mt = java.net.URLConnection.guessContentTypeFromName(f.getName());
+        if (mt == null) mt = "application/octet-stream";
+        Intent i = new Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri, mt)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+        try { startActivity(Intent.createChooser(i, "Öffnen mit")); }
+        catch (ActivityNotFoundException e) { Toast.makeText(this, "Keine App zum Öffnen gefunden", Toast.LENGTH_SHORT).show(); }
+    }
+
+    private void readFileContent(File file) {
+        if (file == null || !file.exists() || !file.isFile() || !file.canRead()) {
+            Toast.makeText(this, "Datei existiert nicht oder kann nicht gelesen werden.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String mt = java.net.URLConnection.guessContentTypeFromName(file.getName());
+        boolean isText = (mt != null && mt.startsWith("text/"))
+                || file.getName().matches("(?i).+\\.(txt|log|json|xml|csv|md|ini|properties|html|htm|js|css|py)$");
+        if (!isText) { openViaIntent(file); return; }
+
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), java.nio.charset.StandardCharsets.UTF_8))) {
+            char[] buf = new char[8192];
+            int n, left = 512 * 1024;
+            while ((n = br.read(buf, 0, Math.min(buf.length, left))) > 0) {
+                sb.append(buf, 0, n);
+                left -= n;
+                if (left <= 0) break;
+            }
+        } catch (IOException e) {
+            Toast.makeText(this, "Fehler beim Lesen der Datei", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ScrollView sv = new ScrollView(this);
+        TextView tv = new TextView(this);
+        tv.setText(sb.toString());
+        tv.setTextIsSelectable(true);
+        tv.setPadding(24,24,24,24);
+        tv.setTypeface(android.graphics.Typeface.MONOSPACE);
+        sv.addView(tv);
+
+        new AlertDialog.Builder(this)
+                .setTitle(file.getName())
+                .setView(sv)
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void unzip(File zipFile, File outputDir) {
+        if (zipFile == null || outputDir == null || !zipFile.isFile() || !outputDir.isDirectory()) {
+            Toast.makeText(this, "Ungültige Datei oder Zielverzeichnis", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)))) {
+            ZipEntry entry;
+            byte[] buf = new byte[8192];
+            File root = outputDir.getCanonicalFile();
+
+            while ((entry = zis.getNextEntry()) != null) {
+                File out = new File(outputDir, entry.getName());
+                File outCanon = out.getCanonicalFile();
+
+
+                if (!outCanon.getPath().equals(root.getPath()) &&
+                        !outCanon.getPath().startsWith(root.getPath() + File.separator)) {
+                    zis.closeEntry();
+                    continue;
+                }
+
+                if (entry.isDirectory()) {
+                    if (!outCanon.exists() && !outCanon.mkdirs())
+                        throw new IOException("Ordner kann nicht erstellt werden: " + outCanon);
+                } else {
+                    File parent = outCanon.getParentFile();
+                    if (parent != null && !parent.exists() && !parent.mkdirs())
+                        throw new IOException("Ordner kann nicht erstellt werden: " + parent);
+                    try (FileOutputStream fos = new FileOutputStream(outCanon)) {
+                        int n;
+                        while ((n = zis.read(buf)) > 0) fos.write(buf, 0, n);
+                    }
+                }
+                zis.closeEntry();
+            }
+            Toast.makeText(this, "Entpackt", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Toast.makeText(this, "ZIP-Fehler: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void zipFiles(List<File> files, File outputZip) throws IOException {
+        File parent = outputZip.getParentFile();
+        if (parent != null && !parent.exists()) parent.mkdirs();
+
+        try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(outputZip)))) {
+            for (File f : files) addFileToZip(f, "", zos);
+        }
+    }
+
+    private void addFileToZip(File file, String base, ZipOutputStream zos) throws IOException {
+        String name = base + file.getName();
+        if (file.isDirectory()) {
+            File[] kids = file.listFiles();
+            if (kids == null || kids.length == 0) {
+                if (!name.endsWith("/")) name += "/";
+                zos.putNextEntry(new ZipEntry(name));
+                zos.closeEntry();
+            } else {
+                for (File k : kids) addFileToZip(k, name + "/", zos);
+            }
+        } else {
+            zos.putNextEntry(new ZipEntry(name));
+            try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
+                byte[] buf = new byte[8192]; int n;
+                while ((n = in.read(buf)) > 0) zos.write(buf, 0, n);
+            }
+            zos.closeEntry();
+        }
+    }
+
+    private void showHtmlFileDialog(File file) {
+        if (file == null || !file.exists()) {
+            Toast.makeText(this, "Datei existiert nicht.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("HTML öffnen mit:")
+                .setItems(new String[]{"WebView", "Quelltext anzeigen"}, (dialog, which) -> {
+                    if (which == 0) {
+                        openHtmlInWebView(file);
+                    } else {
+                        readFileContent(file);
+                    }
+                })
+                .show();
+    }
+
+    private void openHtmlInWebView(File file) {
+        String url = "file://" + file.getAbsolutePath();
+        Intent i = new Intent(this, WebActivity.class);
+        i.putExtra("url", url);
+        startActivity(i);
+    }
+
+    private void showZipNameDialog(List<File> selectedFiles) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("ZIP-Dateiname eingeben:");
+        final EditText input = new EditText(this);
+        input.setHint("z.B. gepackt.zip");
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            String fileName = input.getText().toString().trim();
+            if (!fileName.endsWith(".zip")) {
+                fileName += ".zip";
+            }
+
+            File zipOutput = new File(currentDir, fileName);
+            try {
+                zipFiles(selectedFiles, zipOutput);
+                Toast.makeText(this, "ZIP erstellt: " + zipOutput.getName(), Toast.LENGTH_LONG).show();
+                showFilesAndDirectories(currentDir);
+            } catch (IOException e) {
+                Toast.makeText(this, "Fehler beim Packen: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+        builder.setNegativeButton("Abbrechen", null);
+        builder.show();
+    }
+
+    private void installApk(DocumentFile file) {
+        if (file == null || !file.exists()) {
+            Toast.makeText(this, "Keine gültige APK-Datei.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                !getPackageManager().canRequestPackageInstalls()) {
+            Intent s = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:" + getPackageName()));
+            startActivity(s);
+            return;
+        }
+
+        Uri apkUri = file.getUri();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "Keine App zum Installieren gefunden.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private String getMimeType(String name) {
+        String extension = MimeTypeMap.getFileExtensionFromUrl(name);
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() != KeyEvent.ACTION_DOWN) return super.dispatchKeyEvent(event);
+
+        int pos = listView.getSelectedItemPosition();
+        switch (event.getKeyCode()) {
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                if (pos != ListView.INVALID_POSITION) {
+                    listView.setItemChecked(pos, !listView.isItemChecked(pos));
+                    return true;
+                }
+                break;
+
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+                if (pos != ListView.INVALID_POSITION) {
+                    File f = adapter.getItem(pos);
+                    if (f != null) {
+                        if (f.isDirectory()) showFilesAndDirectories(f);
+                        else openFile(f);
+                        return true;
+                    }
+                }
+                break;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    private boolean isBarVisible = false;
+
+    private void toggleActionBar() {
+        if (getSupportActionBar() != null) {
+            if (isBarVisible) {
+                getSupportActionBar().hide();
+            } else {
+                getSupportActionBar().show();
+            }
+            isBarVisible = !isBarVisible;
+        }
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        File root = new File("/storage/emulated/0");
+
+        if (currentDir != null && !currentDir.equals(root)) {
+            File parent = currentDir.getParentFile();
+            if (parent != null && parent.isDirectory()) {
+                showFilesAndDirectories(parent);
+                return;
+            }
+        }
+
+        long now = System.currentTimeMillis();
+        if (now - backPressedTime < 2000) {
+            super.onBackPressed();
+        } else {
+            Toast.makeText(this, "Nochmals zurück drücken zum Beenden", Toast.LENGTH_SHORT).show();
+            backPressedTime = now;
+        }
+    }
+}

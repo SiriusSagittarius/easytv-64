@@ -1,0 +1,93 @@
+<settings>
+
+    <category label="Telegram Einstellungen">
+        <setting id="telegram.isEnabled"
+            type="bool"
+            label="Telegram aktivieren"
+            default="false" />
+
+        <setting id="telegram.token"
+            type="text"
+            label="Bot Token"
+            default=""
+            enable="eq(-1,true)"
+            visible="true" />
+
+        <setting id="telegram.offset"
+            type="number"
+            label="Update Offset"
+            default="0"
+            enable="eq(-2,true)"
+            visible="true" />
+
+        <setting id="download_path"
+            type="folder"
+            label="Download-Verzeichnis"
+            default="special://home/userdata/addon_data/plugin.autostart/downloads/"
+            visible="true" />
+    </category>
+
+    <category label="Uploads">
+
+        <setting id="ul"
+            type="enum"
+            label="Upload Slot auswählen"
+            values="upload.slot1|upload.slot2|upload.slot3|upload.slot4|upload.slot5|upload.slot6|upload.slot7|upload.slot8|upload.slot9"
+            default="0" />
+
+
+        <setting id="ul.info.url"
+            type="lsep"
+            label="Download Link-URL"
+            enable="true" />
+
+        <setting id="ul.info.expire"
+            type="lsep"
+            label="Ablaufdatum"
+            enable="true" />
+
+        <setting id="ul.info.size"
+            type="lsep"
+            label="Größe"
+            enable="true" />
+
+
+        <setting id="ul.action.delete"
+            type="action"
+            label="Löschen"
+            action="RunScript(plugin.autostart, delete)"
+        />
+
+        <setting id="ul.action.open"
+            type="action"
+            label="Verknüpfe dein Bundle im Forum"
+            action="RunScript(plugin.autostart, webview)"
+        />
+
+        <setting id="ul.action.save"
+            type="action"
+            label="In Datei speichern"
+            action="RunScript(plugin.autostart, savetext)"
+        />
+
+    </category>
+
+    <category/>
+
+    <category label="Allgemein">
+
+        <setting id="jspin.pin"
+            type="text"
+            label="PIN-Code für Jugendschutz"
+            default="123"
+            visible="false"/>
+
+
+        <setting id="skin.reload"
+            type="action"
+            label="Skin neu laden"
+            action="ReloadSkin()"
+            option="close"
+        />
+    </category>
+</settings>

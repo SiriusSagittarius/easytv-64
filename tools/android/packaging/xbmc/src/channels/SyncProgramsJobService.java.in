@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package @APP_PACKAGE@.channels;
+package app.easytv.org.channels;
 
 import android.app.job.JobParameters;
 import android.app.job.JobService;
@@ -29,16 +29,16 @@ import androidx.tvprovider.media.tv.Channel;
 import androidx.tvprovider.media.tv.PreviewProgram;
 import androidx.tvprovider.media.tv.TvContractCompat;
 
-import @APP_PACKAGE@.Splash;
-import @APP_PACKAGE@.XBMCJsonRPC;
-import @APP_PACKAGE@.model.Movie;
-import @APP_PACKAGE@.model.TVShow;
-import @APP_PACKAGE@.model.TVEpisode;
-import @APP_PACKAGE@.model.File;
-import @APP_PACKAGE@.model.Media;
-import @APP_PACKAGE@.channels.model.Subscription;
-import @APP_PACKAGE@.channels.model.XBMCDatabase;
-import @APP_PACKAGE@.channels.util.TvUtil;
+import app.easytv.org.Splash;
+import app.easytv.org.XBMCJsonRPC;
+import app.easytv.org.model.Movie;
+import app.easytv.org.model.TVShow;
+import app.easytv.org.model.TVEpisode;
+import app.easytv.org.model.File;
+import app.easytv.org.model.Media;
+import app.easytv.org.channels.model.Subscription;
+import app.easytv.org.channels.model.XBMCDatabase;
+import app.easytv.org.channels.util.TvUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +55,7 @@ import java.util.concurrent.Executors;
 public class SyncProgramsJobService extends JobService
 {
 
-  private static final String TAG = "@APP_NAME@";
+  private static final String TAG = "EasyTV";
 
   private SyncProgramsTask mSyncProgramsTask;
 

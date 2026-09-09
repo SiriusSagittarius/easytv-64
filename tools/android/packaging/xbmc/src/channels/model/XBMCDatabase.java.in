@@ -11,15 +11,15 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package @APP_PACKAGE@.channels.model;
+package app.easytv.org.channels.model;
 
 import android.content.Context;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.Nullable;
 
-import @APP_PACKAGE@.R;
-import @APP_PACKAGE@.channels.util.SharedPreferencesHelper;
-import @APP_PACKAGE@.model.Media;
+import app.easytv.org.R;
+import app.easytv.org.channels.util.SharedPreferencesHelper;
+import app.easytv.org.model.Media;
 
 import java.util.Collections;
 import java.util.List;

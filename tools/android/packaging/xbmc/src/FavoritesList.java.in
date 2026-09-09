@@ -1,0 +1,128 @@
+package app.easytv.org;
+
+import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.widget.*;
+import androidx.appcompat.app.AppCompatActivity;
+import com.bumptech.glide.Glide;
+import java.util.ArrayList;
+import java.util.List;
+import app.easytv.org.data.EasyTvDb;
+
+public class FavoritesList extends AppCompatActivity {
+    private ListView listView;
+    private final List<FavoriteItem> favorites = new ArrayList<>();
+    private FavoritesAdapter adapter;
+    private EasyTvDb db;
+
+    @Override protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_favorites_list); // behalte dein Layout
+        setTitle("favoriten");
+        db = EasyTvDb.get(this);
+
+        listView = findViewById(R.id.favoritesListView);
+        adapter = new FavoritesAdapter();
+        listView.setAdapter(adapter);
+
+        listView.setOnItemClickListener((p, v, pos, id) -> showOptionsDialog(favorites.get(pos)));
+        reload();
+    }
+
+    private void reload() {
+        favorites.clear();
+        try (Cursor c = db.getFavoritesAsc()) {
+            int ixId = c.getColumnIndexOrThrow("id");
+            int ixFav = c.getColumnIndexOrThrow("favicon");
+            int ixUrl = c.getColumnIndexOrThrow("url");
+            int ixTit = c.getColumnIndexOrThrow("titel");
+            while (c.moveToNext()) {
+                favorites.add(new FavoriteItem(
+                        c.getLong(ixId),
+                        c.getString(ixUrl),
+                        c.getString(ixTit),
+                        c.getString(ixFav)
+                ));
+            }
+        }
+        adapter.notifyDataSetChanged();
+        if (favorites.isEmpty()) Toast.makeText(this, "Keine Favoriten vorhanden", Toast.LENGTH_SHORT).show();
+    }
+    private void showOptionsDialog(FavoriteItem item) {
+        String[] options = {"OPEN", "CLIPBOARD", "DELETE", "CLEAN FAVOS"};
+        new AlertDialog.Builder(this)
+                .setTitle("Optionen")
+                .setItems(options, (d, w) -> {
+                    switch (w) {
+                        case 0: openUrlInWebView(item.getUrl()); break;
+                        case 1: copyToClipboardAndDb(item.getUrl()); break;
+                        case 2: db.deleteFavoritesItem(item.getId()); reload(); break;
+                        case 3: confirmClearAll(); break;
+
+                    }
+                }).show();
+    }
+
+
+    private void confirmClearAll() {
+        new AlertDialog.Builder(this)
+                .setTitle("Bestätigen")
+                .setMessage("Alle Favoriten löschen?")
+                .setPositiveButton("Löschen", (dd, ww) -> { db.clearFavorites(); reload(); })
+                .setNegativeButton("Abbrechen", null)
+                .show();
+    }
+
+    private void openUrlInWebView(String url) {
+        Intent i = new Intent(this, WebActivity.class);
+        i.putExtra("url", url);
+        startActivity(i);
+    }
+
+    private void copyToClipboardAndDb(String url) {
+        ClipboardManager cb = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        cb.setPrimaryClip(ClipData.newPlainText("URL", url));
+        db.addClipboardEntry(url);
+        Toast.makeText(this, "URL kopiert", Toast.LENGTH_SHORT).show();
+    }
+
+    /* -------- Adapter -------- */
+    private class FavoritesAdapter extends BaseAdapter {
+        @Override public int getCount() { return favorites.size(); }
+        @Override public FavoriteItem getItem(int pos) { return favorites.get(pos); }
+        @Override public long getItemId(int pos) { return favorites.get(pos).getId(); }
+        @Override public android.view.View getView(int pos, android.view.View convertView, android.view.ViewGroup parent) {
+            android.view.View v = convertView;
+            VH h;
+            if (v == null) {
+                v = getLayoutInflater().inflate(R.layout.favorites_list_item, parent, false);
+                h = new VH(v);
+                v.setTag(h);
+            } else h = (VH) v.getTag();
+
+            FavoriteItem it = getItem(pos);
+            h.title.setText(it.getTitle() != null ? it.getTitle() : it.getUrl());
+            h.url.setText(it.getUrl());
+            if (it.getfaviconUrl() != null && !it.getfaviconUrl().isEmpty()) {
+                Glide.with(FavoritesList.this).load(it.getfaviconUrl()).into(h.favicon);
+            } else {
+                h.favicon.setImageDrawable(null);
+            }
+            return v;
+        }
+
+        class VH {
+            final ImageView favicon; final TextView title; final TextView url;
+            VH(android.view.View v) {
+                favicon = v.findViewById(R.id.faviconImageView);
+                title   = v.findViewById(R.id.titleTextView);
+                url     = v.findViewById(R.id.urlTextView);
+            }
+        }
+    }
+}

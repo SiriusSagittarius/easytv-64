@@ -1,0 +1,595 @@
+package app.easytv.org;
+
+
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.PointF;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.Display;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.MotionEvent.PointerCoords;
+import android.view.MotionEvent.PointerProperties;
+import android.view.WindowManager;
+import android.webkit.WebView;
+import android.widget.FrameLayout;
+import java.util.Locale;
+import java.util.Objects;
+
+public class CursorLayout extends FrameLayout {
+    static boolean isCursorEnabled = true;
+    private long lastHoverCheckTime = 0;
+    private boolean isHoveringClickable = false;
+    private String currentHoverUrl = null;
+    private String currentHoverText = null;
+    private final Handler handler = new Handler();
+    private boolean isLongPress = true;
+    public static final int CURSOR_DISAPPEAR_TIMEOUT = 3000;
+    public static int CURSOR_RADIUS = 0;
+    public static float CURSOR_STROKE_WIDTH = 0.0f;
+    public static float MAX_CURSOR_SPEED = 0.0f;
+    public static int SCROLL_START_PADDING = 100;
+    public static final int UNCHANGED = -100;
+    public int EFFECT_DIAMETER;
+    public int EFFECT_RADIUS;
+    private Callback callback;
+
+    private WebView logview;
+    private WebView webView;
+    public Point cursorDirection = new Point(0, 0);
+    public Runnable cursorHideRunnable = new Runnable() {
+        public void run() {
+            CursorLayout.this.invalidate();
+        }
+    };
+    public PointF cursorPosition = new PointF(0.0f, 0.0f);
+    public PointF cursorSpeed = new PointF(0.0f, 0.0f);
+    private final Runnable cursorUpdateRunnable = new Runnable() {
+        public void run() {
+            if (CursorLayout.this.getHandler() != null) {
+                CursorLayout.this.getHandler().removeCallbacks(CursorLayout.this.cursorHideRunnable);
+            }
+            long currentTimeMillis = System.currentTimeMillis();
+            long access$100 = currentTimeMillis - CursorLayout.this.lastCursorUpdate;
+            CursorLayout.this.lastCursorUpdate = currentTimeMillis;
+            float f = ((float) access$100) * 0.05f;
+            PointF access$200 = CursorLayout.this.cursorSpeed;
+            CursorLayout cursorLayout = CursorLayout.this;
+            float f2 = cursorLayout.cursorSpeed.x;
+            CursorLayout cursorLayout2 = CursorLayout.this;
+            float access$400 = cursorLayout.bound(f2 + (cursorLayout2.bound((float) cursorLayout2.cursorDirection.x, 1.0f) * f), CursorLayout.MAX_CURSOR_SPEED);
+            CursorLayout cursorLayout3 = CursorLayout.this;
+            float f3 = cursorLayout3.cursorSpeed.y;
+            CursorLayout cursorLayout4 = CursorLayout.this;
+            access$200.set(access$400, cursorLayout3.bound(f3 + (cursorLayout4.bound((float) cursorLayout4.cursorDirection.y, 1.0f) * f), CursorLayout.MAX_CURSOR_SPEED));
+            if (Math.abs(CursorLayout.this.cursorSpeed.x) < 0.1f) {
+                CursorLayout.this.cursorSpeed.x = 0.0f;
+            }
+            if (Math.abs(CursorLayout.this.cursorSpeed.y) < 0.1f) {
+                CursorLayout.this.cursorSpeed.y = 0.0f;
+            }
+            if (CursorLayout.this.cursorDirection.x == 0 && CursorLayout.this.cursorDirection.y == 0 && CursorLayout.this.cursorSpeed.x == 0.0f && CursorLayout.this.cursorSpeed.y == 0.0f) {
+                if (CursorLayout.this.getHandler() != null) {
+                    CursorLayout.this.getHandler().postDelayed(CursorLayout.this.cursorHideRunnable, 1000);
+                }
+                return;
+            }
+            CursorLayout.this.tmpPointF.set(CursorLayout.this.cursorPosition);
+            CursorLayout.this.cursorPosition.offset(CursorLayout.this.cursorSpeed.x, CursorLayout.this.cursorSpeed.y);
+            Log.d("cursor1234_xxxx", String.valueOf(CursorLayout.this.cursorPosition.x));
+            Log.d("cursor1234_yyyy", String.valueOf(CursorLayout.this.cursorPosition.y));
+            if (CursorLayout.this.cursorPosition.x < 0.0f) {
+                CursorLayout.this.cursorPosition.x = 0.0f;
+            } else if (CursorLayout.this.cursorPosition.x > ((float) (CursorLayout.this.getWidth() - 1))) {
+                CursorLayout.this.cursorPosition.x = (float) (CursorLayout.this.getWidth() - 1);
+            }
+            if (CursorLayout.this.cursorPosition.y < 0.0f) {
+                CursorLayout.this.cursorPosition.y = 0.0f;
+            } else if (CursorLayout.this.cursorPosition.y > ((float) (CursorLayout.this.getHeight() - 1))) {
+                CursorLayout.this.cursorPosition.y = (float) (CursorLayout.this.getHeight() - 1);
+            }
+            if (!CursorLayout.this.tmpPointF.equals(CursorLayout.this.cursorPosition) && CursorLayout.this.dpadCenterPressed) {
+                CursorLayout cursorLayout5 = CursorLayout.this;
+                cursorLayout5.dispatchMotionEvent(cursorLayout5.cursorPosition.x, CursorLayout.this.cursorPosition.y, 2);
+            }
+            if (CursorLayout.this.webView != null) {
+                WebView wv = CursorLayout.this.webView;
+
+                // Nach unten scrollen
+                if (cursorPosition.y > (getHeight() - SCROLL_START_PADDING)) {
+                    if (cursorSpeed.y > 0.0f && wv.canScrollVertically(1)) {
+                        wv.post(() -> wv.scrollBy(0, (int) cursorSpeed.y));
+                    }
+                }
+                // Nach oben scrollen
+                else if (cursorPosition.y < SCROLL_START_PADDING) {
+                    if (cursorSpeed.y < 0.0f && wv.canScrollVertically(-1)) {
+                        wv.post(() -> wv.scrollBy(0, (int) cursorSpeed.y));
+                    }
+                }
+
+                // Nach rechts scrollen
+                if (cursorPosition.x > (getWidth() - SCROLL_START_PADDING)) {
+                    if (cursorSpeed.x > 0.0f && wv.canScrollHorizontally(1)) {
+                        wv.post(() -> wv.scrollBy((int) cursorSpeed.x, 0));
+                    }
+                }
+                // Nach links scrollen
+                else if (cursorPosition.x < SCROLL_START_PADDING) {
+                    if (cursorSpeed.x < 0.0f && wv.canScrollHorizontally(-1)) {
+                        wv.post(() -> wv.scrollBy((int) cursorSpeed.x, 0));
+                    }
+                }
+
+                checkHoverState();
+            }
+            CursorLayout.this.invalidate();
+            if (CursorLayout.this.getHandler() != null) {
+                CursorLayout.this.getHandler().post(this);
+            }
+        }
+    };
+
+    private void checkHoverState() {
+        if (webView == null) return;
+        long now = System.currentTimeMillis();
+        if (now - lastHoverCheckTime < 100) return;
+        lastHoverCheckTime = now;
+
+        float x = cursorPosition.x;
+        float y = cursorPosition.y;
+
+        String js = String.format(Locale.US,
+            "(function() {" +
+            "  var el = document.elementFromPoint(%f, %f);" +
+            "  if (!el) return JSON.stringify({clickable:false});" +
+            "  var a = el.closest('a');" +
+            "  var t = el.closest('a, button, input, select, textarea, [onclick], [role=\"button\"]');" +
+            "  return JSON.stringify({" +
+            "    clickable: (t !== null || a !== null)," +
+            "    href: a ? a.href : null," +
+            "    text: t ? (t.innerText || t.value || '') : (a ? (a.innerText || '') : '')" +
+            "  });" +
+            "})()", x, y);
+
+        webView.post(() -> webView.evaluateJavascript(js, value -> {
+            if (value == null || value.equals("null") || value.equals("\"null\"")) {
+                isHoveringClickable = false;
+                currentHoverUrl = null;
+                currentHoverText = null;
+                return;
+            }
+            try {
+                String unquoted = value;
+                if (unquoted.startsWith("\"") && unquoted.endsWith("\"")) {
+                    unquoted = unquoted.substring(1, unquoted.length() - 1)
+                            .replace("\\\"", "\"")
+                            .replace("\\\\", "\\");
+                }
+                org.json.JSONObject obj = new org.json.JSONObject(unquoted);
+                boolean hovering = obj.optBoolean("clickable", false);
+                String href = obj.optString("href", null);
+                if ("null".equals(href) || href.trim().isEmpty()) {
+                    href = null;
+                }
+                String text = obj.optString("text", "");
+
+                if (isHoveringClickable != hovering || !Objects.equals(currentHoverUrl, href)) {
+                    isHoveringClickable = hovering;
+                    currentHoverUrl = href;
+                    currentHoverText = text;
+                    invalidate();
+                }
+            } catch (Exception e) {
+                isHoveringClickable = false;
+                currentHoverUrl = null;
+                currentHoverText = null;
+            }
+        }));
+    }
+
+    /* access modifiers changed from: private */
+    public boolean dpadCenterPressed = false;
+    /* access modifiers changed from: private */
+    public long lastCursorUpdate = System.currentTimeMillis();
+    private final Paint paint = new Paint();
+    PointF tmpPointF = new PointF();
+    public boolean isCursorEnabled() {
+        return isCursorEnabled;
+    }
+    public interface Callback {
+        void onUserInteraction();
+    }
+    public float bound(float f, float f2) {
+        if (f > f2) {
+            return f2;
+        }
+        float f3 = -f2;
+        return f < f3 ? f3 : f;
+    }
+
+    public CursorLayout(Context context) {
+        super(context);
+        init();
+    }
+
+    public CursorLayout(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init();
+    }
+
+    public void setWebView(WebView webView) {
+        this.webView = webView;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            return false;
+        }
+
+
+        if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_UP) {
+
+            float x = event.getX();
+            float y = event.getY();
+
+
+            MotionEvent webViewEvent = MotionEvent.obtain(event.getDownTime(), event.getEventTime(), event.getAction(), x, y, event.getMetaState());
+
+            if (webView != null) {
+                webView.dispatchTouchEvent(webViewEvent);
+            }
+            return true;
+        }
+
+        return super.onTouchEvent(event);
+    }
+
+    private void init() {
+        if (!isInEditMode()) {
+            this.paint.setAntiAlias(true);
+            setWillNotDraw(false);
+            Display defaultDisplay = ((WindowManager) getContext().getSystemService(getContext().WINDOW_SERVICE)).getDefaultDisplay();
+            Point point = new Point();
+            defaultDisplay.getSize(point);
+            this.EFFECT_RADIUS = point.x / 20;
+            this.EFFECT_DIAMETER = this.EFFECT_RADIUS * 2;
+            CURSOR_STROKE_WIDTH = (float) (point.x / 400);
+            CURSOR_RADIUS = point.x / 110;
+            MAX_CURSOR_SPEED = (float) (point.x / 35);
+            SCROLL_START_PADDING = point.x / 15;
+        }
+    }
+
+    public void setCallback(Callback callback2) {
+        this.callback = callback2;
+    }
+    public boolean onInterceptTouchEvent(MotionEvent motionEvent) {
+        Callback callback2 = this.callback;
+        if (callback2 != null) {
+            callback2.onUserInteraction();
+        }
+        return super.onInterceptTouchEvent(motionEvent);
+    }
+    public void onSizeChanged(int i, int i2, int i3, int i4) {
+        super.onSizeChanged(i, i2, i3, i4);
+        Log.d("cursorView123_", "onSizeChanged");
+        if (!isInEditMode()) {
+            this.cursorPosition.set(((float) i) / 2.0f, ((float) i2) / 2.0f);
+            if (getHandler() != null) {
+                getHandler().postDelayed(this.cursorHideRunnable, 3000);
+            }
+        }
+    }
+    public boolean dispatchKeyEvent(KeyEvent keyEvent) {
+        Log.d("cursorView123_", "dispatchKeyEvent");
+        Callback callback2 = this.callback;
+        if (callback2 != null) {
+            callback2.onUserInteraction();
+        }
+        int keyCode = keyEvent.getKeyCode();
+        if (!(keyCode == 66 || keyCode == 160)) {
+            switch (keyCode) {
+                case 19:
+                    if (keyEvent.getAction() == 0) {
+                        if (this.cursorPosition.y <= 0.0f) {
+                            return super.dispatchKeyEvent(keyEvent);
+                        }
+                        handleDirectionKeyEvent(keyEvent, -100, -1, true);
+                    } else if (keyEvent.getAction() == 1) {
+                        handleDirectionKeyEvent(keyEvent, -100, 0, false);
+                    }
+                    return true;
+                case 20:
+                    if (keyEvent.getAction() == 0) {
+                        if (this.cursorPosition.y >= ((float) getHeight())) {
+                            return super.dispatchKeyEvent(keyEvent);
+                        }
+                        handleDirectionKeyEvent(keyEvent, -100, 1, true);
+                    } else if (keyEvent.getAction() == 1) {
+                        handleDirectionKeyEvent(keyEvent, -100, 0, false);
+                    }
+                    return true;
+                case 21:
+                    if (keyEvent.getAction() == 0) {
+                        if (this.cursorPosition.x <= 0.0f) {
+                            return super.dispatchKeyEvent(keyEvent);
+                        }
+                        handleDirectionKeyEvent(keyEvent, -1, -100, true);
+                    } else if (keyEvent.getAction() == 1) {
+                        handleDirectionKeyEvent(keyEvent, 0, -100, false);
+                    }
+                    return true;
+                case 22:
+                    if (keyEvent.getAction() == 0) {
+                        if (this.cursorPosition.x >= ((float) getWidth())) {
+                            return super.dispatchKeyEvent(keyEvent);
+                        }
+                        handleDirectionKeyEvent(keyEvent, 1, -100, true);
+                    } else if (keyEvent.getAction() == 1) {
+                        handleDirectionKeyEvent(keyEvent, 0, -100, false);
+                    }
+                    return true;
+                case 23:
+                    break;
+
+                case 89:
+                    if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                        isLongPress = false;
+                        handler.postDelayed(scrollUpRunnable, 1500);
+                        return true;
+                    } else if (keyEvent.getAction() == KeyEvent.ACTION_UP) {
+                        handler.removeCallbacks(scrollUpRunnable);
+                        if (!isLongPress) {
+                            goBackInWebView();
+                        }
+                        return true;
+                    }
+                    break;
+                case 90:
+                    if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                        isLongPress = false;
+                        handler.postDelayed(scrollDownRunnable, 1500);
+                        return true;
+                    } else if (keyEvent.getAction() == KeyEvent.ACTION_UP) {
+                        handler.removeCallbacks(scrollDownRunnable);
+                        if (!isLongPress) {
+
+                            goForwardInWebView();
+                        }
+                        return true;
+                    }
+                    break;
+                case 85:
+                    if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                        isLongPress = false;
+                        handler.postDelayed(pastRunnable, 1500);
+                        return true;
+                    } else if (keyEvent.getAction() == KeyEvent.ACTION_UP) {
+                        handler.removeCallbacks(pastRunnable);
+                        if (!isLongPress) {
+                            pasteFromClipboard();
+                        }
+                        return true;
+                    }
+                    break;
+                default:
+                    switch (keyCode) {
+                        case 268:
+                            if (keyEvent.getAction() == 0) {
+                                handleDirectionKeyEvent(keyEvent, -1, -1, true);
+                            } else if (keyEvent.getAction() == 1) {
+                                handleDirectionKeyEvent(keyEvent, 0, 0, false);
+                            }
+                            return true;
+                        case 269:
+                            if (keyEvent.getAction() == 0) {
+                                handleDirectionKeyEvent(keyEvent, -1, 1, true);
+                            } else if (keyEvent.getAction() == 1) {
+                                handleDirectionKeyEvent(keyEvent, 0, 0, false);
+                            }
+                            return true;
+                        case 270:
+                            if (keyEvent.getAction() == 0) {
+                                handleDirectionKeyEvent(keyEvent, 1, -1, true);
+                            } else if (keyEvent.getAction() == 1) {
+                                handleDirectionKeyEvent(keyEvent, 0, 0, false);
+                            }
+                            return true;
+                        case 271:
+                            if (keyEvent.getAction() == 0) {
+                                handleDirectionKeyEvent(keyEvent, 1, 1, true);
+                            } else if (keyEvent.getAction() == 1) {
+                                handleDirectionKeyEvent(keyEvent, 0, 0, false);
+                            }
+                            return true;
+                    }
+            }
+        }
+        if (!isCursorDissappear()) {
+            if (keyEvent.getAction() == 0 && !getKeyDispatcherState().isTracking(keyEvent)) {
+                getKeyDispatcherState().startTracking(keyEvent, this);
+                this.dpadCenterPressed = true;
+                if (currentHoverUrl == null) {
+                    dispatchMotionEvent(this.cursorPosition.x, this.cursorPosition.y, 0);
+                }
+            } else if (keyEvent.getAction() == 1) {
+                getKeyDispatcherState().handleUpEvent(keyEvent);
+                this.dpadCenterPressed = false;
+                if (currentHoverUrl != null && !currentHoverUrl.trim().isEmpty() &&
+                        (currentHoverUrl.startsWith("http://") || currentHoverUrl.startsWith("https://") || currentHoverUrl.startsWith("plugin://"))) {
+                    if (getContext() instanceof WebActivity) {
+                        ((WebActivity) getContext()).showLinkContextMenu(currentHoverUrl, currentHoverText);
+                    }
+                } else {
+                    dispatchMotionEvent(this.cursorPosition.x, this.cursorPosition.y, 1);
+                }
+            }
+            return true;
+        }
+        return super.dispatchKeyEvent(keyEvent);
+    }
+    private final Runnable scrollUpRunnable = new Runnable() {
+        @Override
+        public void run() {
+            isLongPress = true;
+            scrollUpInWebView();
+        }
+    };
+    private final Runnable pastRunnable = new Runnable() {
+        @Override
+        public void run() {
+            isLongPress = true;
+            copySelectedText();
+        }
+    };
+    private final Runnable scrollDownRunnable = new Runnable() {
+        @Override
+        public void run() {
+            isLongPress = true;
+            scrollDownInWebView();
+        }
+    };
+    private final Runnable backRunnable = new Runnable() {
+        @Override
+        public void run() {
+            isLongPress = true;
+            startMainActivity();
+        }
+    };
+    public void copySelectedText() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.copySelectedText();
+    }
+    public void pasteFromClipboard() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.pasteFromClipboard();
+    }
+
+    public void startMainActivity() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.startMainActivity();
+    }
+    public void openSideMenu() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.openSideMenu();
+    }
+    public void goForwardInWebView() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.goForwardInWebView();
+    }
+    public void scrollDownInWebView() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.scrollDownInWebView();
+    }
+    public void scrollUpInWebView() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.scrollUpInWebView();
+    }
+    public void goBackInWebView() {
+        WebActivity webActivity = (WebActivity) getContext();
+        webActivity.goBackInWebView();
+    }
+    void toggleCursorVisibility() {
+        isCursorEnabled = !isCursorEnabled;
+        invalidate();
+    }
+
+
+    public void dispatchMotionEvent(float f, float f2, int i) {
+        Log.d("cursorView123_", "dispatchMotionEvent");
+        long uptimeMillis = SystemClock.uptimeMillis();
+        long uptimeMillis2 = SystemClock.uptimeMillis();
+        PointerProperties pointerProperties = new PointerProperties();
+        pointerProperties.id = 0;
+        pointerProperties.toolType = MotionEvent.TOOL_TYPE_FINGER;
+        PointerProperties[] pointerPropertiesArr = {pointerProperties};
+        PointerCoords pointerCoords = new PointerCoords();
+        pointerCoords.x = f;
+        pointerCoords.y = f2;
+        pointerCoords.pressure = 1.0f;
+        pointerCoords.size = 1.0f;
+        dispatchTouchEvent(MotionEvent.obtain(uptimeMillis, uptimeMillis2, i, 1, pointerPropertiesArr, new PointerCoords[]{pointerCoords}, 0, 0, 1.0f, 1.0f, 0, 0, 0, 0));
+    }
+    private void handleDirectionKeyEvent(KeyEvent keyEvent, int i, int i2, boolean z) {
+        this.lastCursorUpdate = System.currentTimeMillis();
+        if (!z) {
+            getKeyDispatcherState().handleUpEvent(keyEvent);
+            this.cursorSpeed.set(0.0f, 0.0f);
+        } else if (!getKeyDispatcherState().isTracking(keyEvent)) {
+            Handler handler = getHandler();
+            handler.removeCallbacks(this.cursorUpdateRunnable);
+            handler.post(this.cursorUpdateRunnable);
+            getKeyDispatcherState().startTracking(keyEvent, this);
+        } else {
+            return;
+        }
+        Point point = this.cursorDirection;
+        if (i == -100) {
+            i = point.x;
+        }
+        if (i2 == -100) {
+            i2 = this.cursorDirection.y;
+        }
+        point.set(i, i2);
+    }
+    public void setCursorEnabled(boolean enabled) {
+        isCursorEnabled = enabled;
+        if (!enabled) {
+            cursorSpeed.set(0.0f, 0.0f);
+            cursorDirection.set(0, 0);
+            if (getHandler() != null) {
+                getHandler().removeCallbacks(cursorUpdateRunnable);
+            }
+            invalidate();
+        } else {
+            lastCursorUpdate = System.currentTimeMillis();
+            invalidate();
+        }
+    }
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        super.dispatchDraw(canvas);
+        if (!isInEditMode() && isCursorEnabled && !isCursorDissappear()) {
+
+            float x = cursorPosition.x;
+            float y = cursorPosition.y;
+            float radius = isHoveringClickable ? CURSOR_RADIUS * 1.35f : CURSOR_RADIUS;
+
+            if (isHoveringClickable) {
+                // Klickbares Element erkannt: Hellgrüner Zeiger mit gelbem Rand + 35% größer
+                paint.setColor(Color.argb(220, 50, 220, 100));
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(x, y, radius, paint);
+
+                paint.setColor(Color.YELLOW);
+                paint.setStrokeWidth(CURSOR_STROKE_WIDTH * 1.5f);
+                paint.setStyle(Paint.Style.STROKE);
+                canvas.drawCircle(x, y, radius, paint);
+            } else {
+                // Normaler Zustand: Halbtransparenter Weißer Zeiger mit rotem Rand
+                paint.setColor(Color.argb(128, 255, 255, 255));
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(x, y, radius, paint);
+
+                paint.setColor(Color.RED);
+                paint.setStrokeWidth(CURSOR_STROKE_WIDTH);
+                paint.setStyle(Paint.Style.STROKE);
+                canvas.drawCircle(x, y, radius, paint);
+            }
+        }
+    }
+    private boolean isCursorDissappear() {
+        return System.currentTimeMillis() - this.lastCursorUpdate > 3000;
+    }
+    public void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+    }
+}

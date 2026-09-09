@@ -1,4 +1,4 @@
-package @APP_PACKAGE@.content;
+package app.easytv.org.content;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -7,9 +7,9 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import @APP_PACKAGE@.XBMCFile;
-import @APP_PACKAGE@.XBMCJsonRPC;
-import @APP_PACKAGE@.model.File;
+import app.easytv.org.XBMCFile;
+import app.easytv.org.XBMCJsonRPC;
+import app.easytv.org.model.File;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import java.util.List;
 
 public class XBMCFileContentProvider extends XBMCContentProvider
 {
-  private static String TAG = "@APP_NAME@";
+  private static String TAG = "EasyTV";
 
   public static final String AUTHORITY = AUTHORITY_ROOT + ".file";
 

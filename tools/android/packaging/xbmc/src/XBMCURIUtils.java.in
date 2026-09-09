@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.util.Log;
 
@@ -6,7 +6,7 @@ public class XBMCURIUtils
 {
   native String _substitutePath(String path);
 
-  private static String TAG = "@APP_NAME@";
+  private static String TAG = "EasyTV";
 
   public XBMCURIUtils()
   {

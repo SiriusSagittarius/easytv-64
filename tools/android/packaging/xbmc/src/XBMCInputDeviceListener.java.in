@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.hardware.input.InputManager.InputDeviceListener;
 

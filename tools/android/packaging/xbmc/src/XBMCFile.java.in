@@ -1,4 +1,4 @@
-package @APP_PACKAGE@;
+package app.easytv.org;
 
 import android.util.Log;
 
@@ -13,7 +13,7 @@ public class XBMCFile
   native byte[] _read();
   native boolean _eof();
 
-  private static String TAG = "@APP_NAME@";
+  private static String TAG = "EasyTV";
 
   public XBMCFile()
   {
