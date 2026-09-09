@@ -336,3 +336,4 @@ exclude_dll.txt
 
 # clangd index
 .cache/
+xbmc-depends/

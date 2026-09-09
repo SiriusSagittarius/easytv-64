@@ -1,7 +1,8 @@
 include ../../Makefile.include SQLITE3-VERSION ../../download-files.include
 DEPS = ../../Makefile.include SQLITE3-VERSION Makefile ../../download-files.include \
                                 001-Disable-sqlite3bin.patch \
-                                sqlite3.c.patch
+                                sqlite3.c.patch \
+                                002-android-strerror_r.patch
 
 # configuration settings
 export CXXFLAGS+=-DSQLITE_ENABLE_COLUMN_METADATA=1
@@ -21,6 +22,11 @@ $(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 # seems MAP_POPULATE is broken on aarch64
 ifneq ($(OS),android)
 	cd $(PLATFORM); patch -p1 -i ../sqlite3.c.patch
+else
+	# Bionic only implements the POSIX (int-returning) strerror_r, but sqlite3.c
+	# assumes the GNU (char*-returning) variant is available whenever __GNUC__ is
+	# defined (true for Clang too). Fixed upstream in later SQLite releases.
+	cd $(PLATFORM); patch -p1 -i ../002-android-strerror_r.patch
 endif
 	cd $(PLATFORM); $(AUTORECONF) -vif
 	cd $(PLATFORM); $(CONFIGURE)

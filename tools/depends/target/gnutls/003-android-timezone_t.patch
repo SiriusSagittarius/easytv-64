@@ -1,0 +1,40 @@
+--- a/gl/time.in.h
++++ b/gl/time.in.h
+@@ -346,7 +346,17 @@
+ 
+ /* Represents a time zone.
+    (timezone_t) NULL stands for UTC.  */
++#ifndef __ANDROID__
+ typedef struct tm_zone *timezone_t;
++#else
++/* Bionic's own "timezone_t" (struct __timezone_t*) is a permanently opaque
++   handle only implemented inside libc.so from API 35 on - useless here since
++   our minSdk is lower and gnulib needs a concrete struct it can allocate and
++   access directly. Use a distinctly-named type instead of reusing bionic's,
++   which would either collide with it or (if we alias to it) be unusable. */
++typedef struct tm_zone *gl_timezone_t;
++# define timezone_t gl_timezone_t
++#endif
+ 
+ /* tzalloc (name)
+    Returns a time zone object for the given time zone NAME.  This object
+--- a/src/gl/time.in.h
++++ b/src/gl/time.in.h
+@@ -346,7 +346,17 @@
+ 
+ /* Represents a time zone.
+    (timezone_t) NULL stands for UTC.  */
++#ifndef __ANDROID__
+ typedef struct tm_zone *timezone_t;
++#else
++/* Bionic's own "timezone_t" (struct __timezone_t*) is a permanently opaque
++   handle only implemented inside libc.so from API 35 on - useless here since
++   our minSdk is lower and gnulib needs a concrete struct it can allocate and
++   access directly. Use a distinctly-named type instead of reusing bionic's,
++   which would either collide with it or (if we alias to it) be unusable. */
++typedef struct tm_zone *gl_timezone_t;
++# define timezone_t gl_timezone_t
++#endif
+ 
+ /* tzalloc (name)
+    Returns a time zone object for the given time zone NAME.  This object

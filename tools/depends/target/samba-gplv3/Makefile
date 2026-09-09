@@ -4,6 +4,7 @@ DEPS= ../../Makefile.include Makefile SAMBA-GPLV3-VERSION ../../download-files.i
                               03-builtin-heimdal.patch 04-built-static.patch \
                               05-apple-disable-zlib-pkgconfig.patch 06-apple-fix-st_atim.patch \
                               samba_android.patch \
+                              08-android-swab-conflict.patch \
                               no_fork_and_exec.patch \
                               crt_extensions.patch \
 
@@ -77,6 +78,11 @@ $(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 ifeq ($(OS),android)
 	cd $(PLATFORM); patch -p1 -i ../samba_android.patch
 	cd $(PLATFORM); patch -p1 -i ../07-innetgr-check.patch
+	# samba_android.patch above adds its own swab() fallback for API < 28, but
+	# bionic's bits/swab.h has long provided an unconditional static inline
+	# swab() regardless of API level, so the two definitions collide (redefinition
+	# of 'swab') on any NDK new enough to be this strict about it.
+	cd $(PLATFORM); patch -p1 -i ../08-android-swab-conflict.patch
 endif
 ifeq ($(OS), darwin_embedded)
 	cd $(PLATFORM); patch -p1 -i ../no_fork_and_exec.patch
