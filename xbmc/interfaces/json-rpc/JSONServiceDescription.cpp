@@ -236,6 +236,7 @@ JsonRpcMethodMap CJSONServiceDescription::m_methodMaps[] = {
 // Favourites operations
   { "Favourites.GetFavourites",                     CFavouritesOperations::GetFavourites },
   { "Favourites.AddFavourite",                      CFavouritesOperations::AddFavourite },
+  { "Favourites.ExecuteVoiceCommand",               CFavouritesOperations::ExecuteVoiceCommand },
 
 // Textures operations
   { "Textures.GetTextures",                         CTextureOperations::GetTextures },

@@ -79,6 +79,12 @@ bool CChooseThumbnailForFavourite::DoExecute(CFileItemList&,
   return FAVOURITES_UTILS::ChooseAndSetNewThumbnail(*item);
 }
 
+bool CSetVoiceCommandForFavourite::DoExecute(CFileItemList&,
+                                             const std::shared_ptr<CFileItem>& item) const
+{
+  return FAVOURITES_UTILS::ChooseAndSetVoiceCommand(*item);
+}
+
 namespace
 {
 std::shared_ptr<CFileItem> ResolveFavouriteItem(const CFileItem& item)

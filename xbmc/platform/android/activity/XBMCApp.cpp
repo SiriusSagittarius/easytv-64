@@ -1081,7 +1081,15 @@ bool CXBMCApp::StartActivity(const std::string& package,
     if (!jniURI)
       return false;
 
-    newIntent.setDataAndType(jniURI, dataType);
+    // Only attach a MIME type when one was actually requested. Some apps (e.g. NewPipe)
+    // register an intent-filter for their supported links (scheme/host) without declaring
+    // any mimeType at all; Android's filter matching then rejects ANY explicit type,
+    // including an empty string passed via setDataAndType(), so plain setData() is required
+    // for those to resolve correctly.
+    if (dataType.empty())
+      newIntent.setData(jniURI);
+    else
+      newIntent.setDataAndType(jniURI, dataType);
   }
 
   if (!action.empty())

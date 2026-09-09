@@ -6661,6 +6661,34 @@
     ],
     "returns": "string"
   },
+  "Favourites.ExecuteVoiceCommand": {
+    "type": "method",
+    "description": "Match the given text against the voice command assigned to each favourite (assigned via the favourite's context menu) and execute the matching favourite, if any",
+    "transport": "Response",
+    "permission": "Navigate",
+    "params": [
+      {
+        "name": "command",
+        "type": "string",
+        "required": true,
+        "description": "The recognised/typed text to match against favourites' voice commands"
+      }
+    ],
+    "returns": {
+      "type": "object",
+      "properties": {
+        "executed": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether a matching favourite was found and executed"
+        },
+        "favourite": {
+          "type": "string",
+          "description": "Title of the executed favourite. Only present if executed is true"
+        }
+      }
+    }
+  },
   "Settings.GetSections": {
     "type": "method",
     "description": "Retrieves all setting sections",

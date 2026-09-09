@@ -77,6 +77,10 @@ private:
 #endif
   std::string m_filename;
   std::string m_args;
+  bool m_useOriginalUrl = false;
+#if defined(TARGET_ANDROID)
+  std::string m_dataType = "video/*";
+#endif
   bool m_hideconsole;
   bool m_hidexbmc;
   bool m_islauncher;

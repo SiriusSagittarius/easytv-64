@@ -48,6 +48,7 @@ private:
   std::string m_fileTypes;
   std::string m_mimeTypes;
   std::string m_fileName;
+  std::string m_pluginUrl;
 
   bool m_bStreamDetails;
   std::string m_audioCodec;

@@ -19,6 +19,7 @@ namespace FAVOURITES_UTILS
 {
 bool ChooseAndSetNewName(CFileItem& item);
 bool ChooseAndSetNewThumbnail(CFileItem& item);
+bool ChooseAndSetVoiceCommand(CFileItem& item);
 bool MoveItem(CFileItemList& items, const std::shared_ptr<CFileItem>& item, int amount);
 bool RemoveItem(CFileItemList& items, const std::shared_ptr<CFileItem>& item);
 bool ShouldEnableMoveItems();

@@ -24363,3 +24363,28 @@ msgid "50th Anniversary Edition"
 msgstr ""
 
 # 40000 to 40800 are reserved for Video Versions feature
+
+# 40801 to 40899 reserved for EasyTV voice command favourites feature
+#. Context menu item for a favourite, opens a keyboard to assign a voice command
+#: xbmc/favourites/ContextMenus.cpp
+msgctxt "#40801"
+msgid "Assign voice command"
+msgstr ""
+
+#. Keyboard dialog heading when assigning a voice command to a favourite
+#: xbmc/favourites/FavouritesUtils.cpp
+msgctxt "#40802"
+msgid "Enter voice command"
+msgstr ""
+
+#. Notification heading for voice command favourite matching (JSON-RPC Favourites.ExecuteVoiceCommand)
+#: xbmc/interfaces/json-rpc/FavouritesOperations.cpp
+msgctxt "#40803"
+msgid "Voice command"
+msgstr ""
+
+#. Notification shown when a spoken voice command doesn't match any favourite. {0:s} is the recognised text
+#: xbmc/interfaces/json-rpc/FavouritesOperations.cpp
+msgctxt "#40804"
+msgid "No favourite matches \"{0:s}\""
+msgstr ""

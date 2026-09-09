@@ -30,6 +30,14 @@ public:
   std::shared_ptr<CFileItem> GetFavourite(const CFileItem& item, int contextWindow) const;
   std::shared_ptr<CFileItem> ResolveFavourite(const CFileItem& favItem) const;
 
+  /*! \brief Find the favourite whose assigned voice command matches the given text.
+   *  \param voiceCommand The spoken/typed text to match. Comparison is case-insensitive
+   *         and ignores leading/trailing whitespace on both sides.
+   *  \return The matching favourite, or nullptr if none of the favourites have a
+   *          matching voice command assigned (see FAVOURITES_UTILS::ChooseAndSetVoiceCommand).
+   */
+  std::shared_ptr<CFileItem> FindByVoiceCommand(const std::string& voiceCommand) const;
+
   int Size() const;
   void GetAll(CFileItemList& items) const;
   bool AddOrRemove(const CFileItem& item, int contextWindow);

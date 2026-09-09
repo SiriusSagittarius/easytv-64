@@ -18,6 +18,7 @@
 #include "settings/SettingsComponent.h"
 #include "utils/ContentUtils.h"
 #include "utils/FileUtils.h"
+#include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
 #include "utils/XBMCTinyXML2.h"
 #include "utils/log.h"
@@ -119,8 +120,10 @@ bool LoadFromFile(const std::string& strPath, CFileItemList& items)
     // <favourite name="Cool Video" thumb="foo.jpg">PlayMedia(c:\videos\cool_video.avi)</favourite>
     // <favourite name="My Album" thumb="bar.tbn">ActivateWindow(MyMusic,c:\music\my album)</favourite>
     // <favourite name="Apple Movie Trailers" thumb="path_to_thumb.png">RunScript(special://xbmc/scripts/apple movie trailers/default.py)</favourite>
+    // <favourite name="News" thumb="foo.jpg" voicecommand="nachrichten">PlayMedia(...)</favourite>
     const char *name = favourite->Attribute("name");
     const char *thumb = favourite->Attribute("thumb");
+    const char *voiceCommand = favourite->Attribute("voicecommand");
     if (name && favourite->FirstChild())
     {
       const std::string favURL(
@@ -131,6 +134,8 @@ bool LoadFromFile(const std::string& strPath, CFileItemList& items)
         item->SetPath(favURL);
         if (thumb)
           item->SetArt("thumb", thumb);
+        if (voiceCommand)
+          item->SetProperty("voicecommand", voiceCommand);
         items.Add(item);
       }
     }
@@ -181,6 +186,8 @@ bool CFavouritesService::Persist()
     favNode->SetAttribute("name", item->GetLabel().c_str());
     if (item->HasArt("thumb"))
       favNode->SetAttribute("thumb", item->GetArt("thumb").c_str());
+    if (item->HasProperty("voicecommand"))
+      favNode->SetAttribute("voicecommand", item->GetProperty("voicecommand").asString().c_str());
 
     auto* execute = doc.NewText(CFavouritesURL(item->GetPath()).GetExecString().c_str());
     favNode->InsertEndChild(execute);
@@ -309,6 +316,30 @@ std::shared_ptr<CFileItem> CFavouritesService::ResolveFavourite(const CFileItem&
       m_targets.insert({item.GetPath(), targetItem});
       return targetItem;
     }
+  }
+  return {};
+}
+
+std::shared_ptr<CFileItem> CFavouritesService::FindByVoiceCommand(
+    const std::string& voiceCommand) const
+{
+  std::string needle = voiceCommand;
+  StringUtils::Trim(needle);
+  StringUtils::ToLower(needle);
+  if (needle.empty())
+    return {};
+
+  std::unique_lock<CCriticalSection> lock(m_criticalSection);
+  for (const auto& favItem : m_favourites)
+  {
+    if (!favItem->HasProperty("voicecommand"))
+      continue;
+
+    std::string command = favItem->GetProperty("voicecommand").asString();
+    StringUtils::Trim(command);
+    StringUtils::ToLower(command);
+    if (!command.empty() && command == needle)
+      return favItem;
   }
   return {};
 }

@@ -57,6 +57,11 @@ void CPlayerSelectionRule::Initialize(TiXmlElement* pRule)
   m_fileTypes = XMLUtils::GetAttribute(pRule, "filetypes");
   m_mimeTypes = XMLUtils::GetAttribute(pRule, "mimetypes");
   m_fileName = XMLUtils::GetAttribute(pRule, "filename");
+  // Matches against the pre-resolve plugin:// url (item property "original_listitem_url"),
+  // not the resolved stream. Needed because plugin items (e.g. YouTube) are resolved to their
+  // final stream url *before* player selection runs, so "filename" can no longer see the
+  // plugin:// path by that point.
+  m_pluginUrl = XMLUtils::GetAttribute(pRule, "pluginurl");
 
   m_audioCodec = XMLUtils::GetAttribute(pRule, "audiocodec");
   m_audioChannels = XMLUtils::GetAttribute(pRule, "audiochannels");
@@ -181,6 +186,15 @@ void CPlayerSelectionRule::GetPlayers(const CFileItem& item, std::vector<std::st
 
   if (CompileRegExp(m_fileName, regExp) && !MatchesRegExp(item.GetDynPath(), regExp))
     return;
+
+  if (CompileRegExp(m_pluginUrl, regExp))
+  {
+    const std::string sourceUrl = item.HasProperty("original_listitem_url")
+                                       ? item.GetProperty("original_listitem_url").asString()
+                                       : item.GetDynPath();
+    if (!MatchesRegExp(sourceUrl, regExp))
+      return;
+  }
 
   CLog::Log(LOGDEBUG, "CPlayerSelectionRule::GetPlayers: matches rule: {}", m_name);
 

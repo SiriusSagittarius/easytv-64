@@ -8,12 +8,39 @@
     <player name="VideoPlayer" /> placeholder for MPlayer
     <player name="PAPlayer" audio="true" />
     -->
+
+    <!-- Hands YouTube playback off to the NewPipe app via an Android intent instead of
+    using EasyTV's own YouTube playback. No root required: this launches NewPipe like any
+    normal app-to-app handoff on Android (see cores/ExternalPlayer/ExternalPlayer.cpp).
+    "useoriginalurl" makes sure NewPipe gets the original plugin://plugin.video.youtube
+    link (with the video id) instead of the already-resolved stream url; "datatype" is left
+    empty on purpose - NewPipe's intent-filter has no declared mimetype, so setting any
+    type at all (even an empty one) makes Android's intent matching reject NewPipe as a
+    target. The "replacers" rewrite that plugin url into a normal youtube.com watch link,
+    which is what NewPipe actually expects. -->
+    <player name="NewPipe" type="ExternalPlayer" audio="true" video="true">
+      <filename>org.schabi.newpipe</filename>
+      <useoriginalurl>true</useoriginalurl>
+      <datatype></datatype>
+      <replacers>
+        <replacer>
+          <match>video_id=</match>
+          <pat>.*video_id=([A-Za-z0-9_-]{11}).*</pat>
+          <rep>https://www.youtube.com/watch?v=\1</rep>
+        </replacer>
+      </replacers>
+    </player>
   </players>
 
   <rules name="system rules">
     <rule name="mms/udp" protocols="mms|mmsh|udp" player="VideoPlayer" />
     <rule name="lastfm/shout" protocols="lastfm|shout" player="PAPlayer" />
     <rule name="rtmp" protocols="rtmp" player="videodefaultplayer" />
+
+    <!-- Route YouTube plugin playback to NewPipe. Matches against the pre-resolve
+    plugin:// url (see PlayerSelectionRule.cpp / PluginDirectory.cpp original_listitem_url),
+    since by rule-evaluation time the item has already been resolved to its stream url. -->
+    <rule name="youtube-newpipe" pluginurl=".*plugin\.video\.youtube.*[?&amp;]video_id=[A-Za-z0-9_-]{11}.*" player="NewPipe" />
 
     <!-- VideoPlayer can play standard rtsp streams -->
     <rule name="rtsp" protocols="rtsp" filetypes="!(rm|ra)"  player="PAPlayer" />

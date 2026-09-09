@@ -8,9 +8,13 @@
 
 #include "FavouritesOperations.h"
 
+#include "FileItem.h"
 #include "ServiceBroker.h"
+#include "dialogs/GUIDialogKaiToast.h"
 #include "favourites/FavouritesService.h"
 #include "favourites/FavouritesURL.h"
+#include "favourites/FavouritesUtils.h"
+#include "guilib/LocalizeStrings.h"
 #include "guilib/WindowIDs.h"
 #include "input/WindowTranslator.h"
 #include "utils/StringUtils.h"
@@ -158,4 +162,28 @@ JSONRPC_STATUS CFavouritesOperations::AddFavourite(const std::string &method, IT
     return ACK;
   else
     return FailedToExecute;
+}
+
+JSONRPC_STATUS CFavouritesOperations::ExecuteVoiceCommand(const std::string &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+  const std::string command = parameterObject["command"].asString();
+
+  const std::shared_ptr<CFileItem> favourite =
+      CServiceBroker::GetFavouritesService().FindByVoiceCommand(command);
+
+  if (favourite && FAVOURITES_UTILS::ExecuteAction(CFavouritesURL(favourite->GetPath())))
+  {
+    result["executed"] = true;
+    result["favourite"] = favourite->GetLabel();
+  }
+  else
+  {
+    result["executed"] = false;
+    CGUIDialogKaiToast::QueueNotification(CGUIDialogKaiToast::Warning,
+                                          g_localizeStrings.Get(40803), // Voice command
+                                          StringUtils::Format(g_localizeStrings.Get(40804),
+                                                              command)); // No favourite matches "{}"
+  }
+
+  return OK;
 }

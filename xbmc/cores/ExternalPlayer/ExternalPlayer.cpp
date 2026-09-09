@@ -90,7 +90,13 @@ bool CExternalPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &opti
     m_bIsPlaying = true;
     m_time = 0;
     m_playbackStartTime = std::chrono::steady_clock::now();
-    m_launchFilename = file.GetDynPath();
+    // Some plugin items (e.g. YouTube) get resolved to their final stream url before a
+    // player is ever chosen. For an external player that itself resolves/plays a plugin
+    // link (e.g. NewPipe), we need the original plugin:// url instead of the resolved
+    // stream, which PluginDirectory preserves in the "original_listitem_url" property.
+    m_launchFilename = (m_useOriginalUrl && file.HasProperty("original_listitem_url"))
+                            ? file.GetProperty("original_listitem_url").asString()
+                            : file.GetDynPath();
     CLog::Log(LOGINFO, "{}: {}", __FUNCTION__, m_launchFilename);
     Create();
 
@@ -475,7 +481,7 @@ bool CExternalPlayer::ExecuteAppAndroid(const char* strSwitches,const char* strP
 {
   CLog::Log(LOGINFO, "{}: {}", __FUNCTION__, strSwitches);
 
-  bool ret = CXBMCApp::StartActivity(strSwitches, "android.intent.action.VIEW", "video/*", strPath);
+  bool ret = CXBMCApp::StartActivity(strSwitches, "android.intent.action.VIEW", m_dataType, strPath);
 
   if (!ret)
   {
@@ -562,6 +568,14 @@ bool CExternalPlayer::Initialize(TiXmlElement* pConfig)
   }
 
   XMLUtils::GetString(pConfig, "args", m_args);
+  XMLUtils::GetBoolean(pConfig, "useoriginalurl", m_useOriginalUrl);
+#if defined(TARGET_ANDROID)
+  // Explicitly setting an empty <datatype/> is needed for apps like NewPipe whose
+  // intent-filter matches on scheme/host only and has no declared mimetype - passing
+  // any mimetype (even an empty string via setDataAndType) makes Android's intent
+  // resolution reject the match. Default stays "video/*" for existing configs.
+  XMLUtils::GetString(pConfig, "datatype", m_dataType);
+#endif
   XMLUtils::GetBoolean(pConfig, "playonestackitem", m_playOneStackItem);
   XMLUtils::GetBoolean(pConfig, "islauncher", m_islauncher);
   XMLUtils::GetBoolean(pConfig, "hidexbmc", m_hidexbmc);

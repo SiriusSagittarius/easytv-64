@@ -39,6 +39,21 @@ bool ChooseAndSetNewName(CFileItem& item)
   return false;
 }
 
+bool ChooseAndSetVoiceCommand(CFileItem& item)
+{
+  std::string voiceCommand = item.GetProperty("voicecommand").asString();
+  if (CGUIKeyboardFactory::ShowAndGetInput(voiceCommand, CVariant{g_localizeStrings.Get(40802)},
+                                           false)) // Enter voice command
+  {
+    if (voiceCommand.empty())
+      item.ClearProperty("voicecommand");
+    else
+      item.SetProperty("voicecommand", voiceCommand);
+    return true;
+  }
+  return false;
+}
+
 bool ChooseAndSetNewThumbnail(CFileItem& item)
 {
   CFileItemList prefilledItems;

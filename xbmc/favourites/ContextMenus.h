@@ -73,6 +73,14 @@ protected:
   bool DoExecute(CFileItemList& items, const std::shared_ptr<CFileItem>& item) const override;
 };
 
+class CSetVoiceCommandForFavourite : public CFavouriteContextMenuAction
+{
+public:
+  CSetVoiceCommandForFavourite() : CFavouriteContextMenuAction(40801) {} // Assign voice command
+protected:
+  bool DoExecute(CFileItemList& items, const std::shared_ptr<CFileItem>& item) const override;
+};
+
 class CFavouritesTargetBrowse : public CStaticContextMenuAction
 {
 public:
