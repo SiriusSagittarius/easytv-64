@@ -1,83 +1,62 @@
-![Kodi Logo](docs/resources/banner.png)
+# Easy-TV – Technische Funktions- und Modulübersicht
 
-<p align="center">
-  <strong>
-    <a href="https://kodi.tv/">website</a>
-    •
-    <a href="https://kodi.wiki/view/Main_Page">docs</a>
-    •
-    <a href="https://forum.kodi.tv/">community</a>
-    •
-    <a href="https://kodi.tv/addons">add-ons</a>
-  </strong>
-</p>
+Easy-TV ist ein eigenständiger XBMC-Fork, der eine native Android-Java-Schicht mit einer plattformübergreifenden Python/Core-Architektur verbindet, um Medien-Setups auf Android (insbesondere Amazon Fire TV Sticks) und Windows zu optimieren.
 
-<p align="center">
-  <a href="LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-GPLv2-blue.svg?style=flat-square"></a>
-  <a href="https://docs.kodi.tv/"><img alt="Documentation" src="https://img.shields.io/badge/code-documented-brightgreen.svg?style=flat-square"></a>
-  <a href="https://github.com/xbmc/xbmc/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square"></a>
-  <a href="#how-to-contribute"><img alt="Contributions Welcome" src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square"></a>
-  <a href="http://jenkins.kodi.tv/"><img alt="Build" src="https://img.shields.io/badge/CI-jenkins-brightgreen.svg?style=flat-square"></a>
-  <a href="https://github.com/xbmc/xbmc/commits/master"><img alt="Commits" src="https://img.shields.io/github/commits-since/xbmc/xbmc/latest.svg?style=flat-square"></a>
-</p>
+---
 
-<a href="https://play.google.com/store/apps/details?id=org.xbmc.kodi" target="_blank">
-  <img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png" height="80"/>
-</a>
+### 1. App-Lebenszyklus & Wartung
+* **System-Reset & Cache-Bereinigung:** Sauberes Beenden, Cache-Clearing (`ClearData.java`) und automatisierter Neustart der gesamten Umgebung (`RestartActivity.java`).
+* **Autostart & Intents:** Initialisierung beim Systemstart (`Boot.java`) sowie Event-Handling über Broadcasts (`XBMCBroadcastReceiver.java`).
+* **OTA-Updates:** Integriertes Update-System zur Versionsprüfung, zum Herunterladen und zur Installation neuer Easy-TV APK-Builds (`UpdateActivity.java`).
 
-<h1 align="center">
-  Welcome to Kodi Home Theater Software!
-</h1>
+### 2. Natives Browsing mit Werbeblocker
+* **Integrierter Web-Viewer:** Browser-Komponente mit aktiver Adblock-Filterung für externe Streaming- und Download-Portale (`Adwebview.java`, `WebActivity.java`, `WebViewUtils.java`).
+* **Verlauf & Favoriten:** Lokale Speicherung besuchter Seiten (`HistoryItem.java`, `HistoryList.java`) und Lesezeichen (`FavoriteItem.java`, `FavoritesList.java`).
 
-Kodi is an award-winning **free and open source** software media player and entertainment hub for digital media. Available as a native application for **Android, Linux, BSD, macOS, iOS, tvOS and Windows operating systems**, Kodi runs on most common processor architectures.
+### 3. Integrierter Downloader, Packer & Zipper
+* **Multithread-Downloader:** Eigenständiger Downloader für Remote-Assets, APKs und Bundle-Archive inklusive Download-Historie (`FileHelper.java`, `XBMCFile.java`, `DownloadList.java`).
+* **Archivierung & Dateisystem:** Natives Packen (ZIP), Entpacken und Organisieren großer Dateiarchive im lokalen Speicher (`/sdcard/Download`, App-Speicher).
 
-Created in 2003 by a group of like minded programmers, Kodi is a non-profit project run by the XBMC Foundation and developed by volunteers located around the world. More than 500 software developers have contributed to Kodi to date, and 100-plus translators have worked to expand its reach, making it available in more than 70 languages.
+### 4. Smart-TV- & Fire TV Stick-Tools
+* **Virtuelle Maussteuerung (`CursorLayout.java`, `over.java`):** Systemweites Mauszeiger-Overlay zur vollständigen Steuerung über Standard-Fernbedienungen (D-Pad/Remote) für Touch- und Web-Inhalte.
+* **Sprachsteuerung & Voice-Assistenz:** Anbindung an die Amazon Fire TV Remote (Speech-to-Text) zur Navigation, Suche und Texteingabe.
 
-While Kodi functions very well as a standard media player application for your computer, it has been designed to be the perfect companion for your HTPC. With its **beautiful interface and powerful skinning engine**, Kodi feels very natural to use from the couch with a remote control and is the ideal solution for your home theater.
+---
 
-## Give your media the love it deserves
-Kodi can be used to play almost all popular audio and video formats around. It was designed for network playback, so you can stream your multimedia from anywhere in the house or directly from the internet using practically any protocol available.
+### 5. Plattform- & Systemverwaltung (Python / Core-Layer)
+* **Plattformerkennung:** 
+  * Erkennt dynamisch das Host-System (**Windows** vs. **Android**).
+  * Differenziert unter Android gezielt die CPU-Architektur (**android32** oder **android64**).
+  * Initialisiert plattformspezifische Pfade für App-Daten, Downloads und Zwischenspeicher.
+* **Zentrale Datenbank (`easytv.db`):** SQLite-Verwaltung für Zwischenablage (Pastelist), Favoriten, Uploads und Browser-Logs.
+* **OS-Integration:**
+  * Öffnet Systemeinstellungen (WLAN, Bluetooth, Apps, Entwickleroptionen/ADB) über Android-Intents bzw. Windows `ms-settings:`-URIs.
+  * Unterstützt NewPipe-Aktivitäten zur Video-Weitergabe unter Android.
+* **Netzwerk-Tools:** Integrierte DNS-Prüfung und -Umschaltung (z. B. Cloudflare `1.1.1.1` oder Google `8.8.8.8`) unter Windows via Batch und `netsh`.
 
-Point Kodi to your media and watch it **scan and automagically create a personalized library** complete with box covers, descriptions, and fanart. There are playlist and slideshow functions, a weather forecast feature and many audio visualizations. Once installed, your computer or HTPC will become a fully functional multimedia jukebox.
+---
 
-<p align="center">
-  <img src="docs/resources/kodi.gif" alt="Kodi">
-</p>
+### 6. Backup-, Restore- & Bundle-Management
+* **Sicherungsmodi:**
+  * **Skin Backup:** Sichert Benutzeroberfläche, Shortcuts und Favoriten (`skinshortcuts`, `favourites.xml`).
+  * **Settings Backup:** Sichert gezielt `guisettings.xml`, `sources.xml` und `favourites.xml`.
+  * **Full Backup:** Bereinigt temporäre Ordner (`packages/`, `Thumbnails/`) und packt das Home-Verzeichnis mit grafischer Fortschrittsanzeige als ZIP.
+* **Plattformkompatibilität (`_is_excluded`):** Filtert binäre, systemspezifische Addons (`inputstream.adaptive`, CDM/Widevine, Joystick-Treiber) sowie Caches automatisch heraus, damit erstellte Bundles plattformübergreifend kompatibel bleiben.
+* **Bundle-Installer (`xinstall`):**
+  * **Neu Anfang:** Werkseitiger Reset mit Installation eines sauberen Basis-Bundles.
+  * **Online / Lokal:** Download oder Offline-Installation von ZIP-Archiven unter Erhalt der Quellen und Favoriten.
+* **Community-Cloud (`easy-tv.org` API):**
+  * Filtert Bundles nach Architektur (Windows64, Android32, Android64).
+  * Community-Katalog mit Sterne-Bewertungen, Kommentaren und Download-Zählern.
+  * Upload und Pflege eigener Bundles.
+  * Sichere Authentifizierung über Windows DPAPI bzw. Android `shared_prefs`.
 
-## Getting Started
-Kodi's developers work hard to make it support a large range of devices and operating systems. We provide final as well as development builds. To get started, head over to the **[downloads section](https://kodi.tv/download)** and simply select the platform that you want to install it on. A **[quick start guide](https://kodi.wiki/view/quick_start_guide)** to help you get acquainted with Kodi is available in our wiki.
+---
 
-## How to Contribute
-Kodi is created by users for users and **we welcome every contribution**. There are no highly paid developers or poorly paid support personnel on the phones ready to take your call. There are only users who have seen a problem and done their best to fix it. This means Kodi will always need the contributions of users like you. How can you get involved?
+### 7. Externe Dienste, Cloud & Messaging
+* **Filebin-Upload & Manager:** Automatisches Packen und Hochladen von Bundles via HTTP-PUT auf filebin.net (7 Tage Vorhaltezeit) mit Restzeitanzeige, Schreibschutz und Löschfunktion.
+* **Telegram Cloud (`tcloud`):** Bot-Integration zum direkten Streamen und Abrufen von Medien (Videos, Musik, Dokumente, Links) aus Telegram-Chats in Easy-TV.
+* **Integrierte Zwischenablage (Pastelist):** SQLite-basierte Text- und URL-Zwischenablage, direkt über das Easy-TV OSD-Keyboard via JSON-RPC ansteuerbar.
+* **Briefkasten & Messaging:** Interner Austausch von Download-Links und Nachrichten mit registrierten Forenbenutzern, passwortgeschütztes Postfach und Kontaktverwaltung (`easytv_friends.json`).
 
-* **Coding:** Developers can help Kodi by **[fixing a bug](https://github.com/xbmc/xbmc/issues)**, adding new features, making our technology smaller and faster and making development easier for others. Kodi's codebase consists mainly of C++ with small parts written in a variety of coding languages. Our add-ons mainly consist of python and XML. For more information, please have a look at our **[contributing guide](docs/CONTRIBUTING.md)**.
-* **Helping users:** Our support process relies on enthusiastic contributors like you to help others get the most out of Kodi. The #1 priority is always answering questions in our **[support forums](https://forum.kodi.tv/)**. Everyday new people discover Kodi, and everyday they are virtually guaranteed to have questions.
-* **Localization:** Translate **[Kodi](https://kodi.weblate.cloud/projects/kodi-core/kodi-main/)**, **[add-ons, skins etc.](https://kodi.weblate.cloud/)** into your native language.
-* **Add-ons:** **[Add-ons](https://kodi.tv/addons)** are what make Kodi the most extensible and customizable entertainment hub available. **[Get started building an add-on](https://kodi.tv/create-an-addon)**.
-* **Documentation:** Kodi's **[wiki pages](https://kodi.wiki/)** are the hub for information about Kodi and surrounding ecosystem. Help make our documentation better by writing new content or correcting existing material.
 
-**Not enough free time?** No problem! There are other ways to help Kodi.
-
-* **Spread the word:** Share Kodi with the world! Tell your friends and family about how Kodi creates an amazing entertainment experience. Stay up to date on the latest stories about Kodi reading our **[news](https://kodi.tv/blog)** section, follow us on **[Twitter](https://twitter.com/koditv)** and **[Facebook](https://www.facebook.com/XBMC/)**, or **star Kodi's repo** if you want to follow development.
-* **Donate:** We are always happy to receive a **[donation](https://kodi.tv/contribute/donate)**. Donations are typically used for travel to attend conferences, any necessary paperwork and legal fees, and the yearly XBMC Foundation Developers Conference, where a great deal of coding and planning for the following year occurs. Donations may also be used to purchase necessary hardware and licenses for developers, along with t-shirts, stickers, and other accessories for conferences.
-* **Buy Kodi merchandise:** Purchasing Kodi gear helps just as much as a donation, and you get something in return! Checkout our **[store](https://kodi.tv/store)** for Kodi branded gear. We regularly add new products so check back often.
-
-## Building
-Kodi uses CMake as its building system but instructions are highly dependent on your operating system and target platform. Fortunately **[we've got you covered](docs/README.md)**.
-
-## Acknowledgements
-Kodi couldn't exist without
-
-* All the **[contributors](https://github.com/xbmc/xbmc/graphs/contributors)**. Big or small a change, it does make a difference.
-* All the developers that write the fantastic **software and libraries** that Kodi uses. We stand on the shoulders of giants.
-* Our **[fantastic community](https://forum.kodi.tv/)** for the never ending support, inspiration, feedback, and for keeping us on our toes when we screw up!
-* **[Our sponsors](https://kodi.tv/sponsors)**. Without them, keeping a huge project like this alive would be next to impossible.
-
-## License
-Kodi is **[GPLv2 licensed](LICENSE.md)**. You may use, distribute and copy it under the license terms.
-
-<a href="https://github.com/xbmc/xbmc/graphs/contributors"><img src="https://forthebadge.com/images/badges/built-by-developers.svg" height="25"></a>
-<a href="https://github.com/xbmc/xbmc"><img src="https://forthebadge.com/images/badges/certified-cousin-terio.svg" height="25"></a>
-<a href="https://github.com/xbmc/xbmc"><img src="https://forthebadge.com/images/badges/approved-by-george-costanza.svg" height="25"></a>
-<a href="https://kodi.tv/download"><img src="https://forthebadge.com/images/badges/check-it-out.svg" height="25"></a>
-<a href="https://github.com/xbmc/xbmc"><img src="https://forthebadge.com/images/badges/winter-is-coming.svg" height="25"></a>
